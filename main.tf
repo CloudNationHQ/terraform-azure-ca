@@ -316,7 +316,7 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
 
   name                         = each.value.name
   container_app_environment_id = azurerm_container_app_environment.cae.id
-  certificate_blob_base64      = try(each.value.key_vault_certificate, filebase64("${each.value.path}"))
+  certificate_blob_base64      = try(each.value.key_vault_certificate, filebase64(each.value.path))
   certificate_password         = each.value.password
 }
 
