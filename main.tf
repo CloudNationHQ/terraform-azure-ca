@@ -345,7 +345,7 @@ resource "azurerm_user_assigned_identity" "identity_jobs" {
 }
 
 resource "azurerm_role_assignment" "role_secret_user" {
-  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity }
+  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity if identity.kv_scope != null }
 
   scope                = each.value.kv_scope
   role_definition_name = "Key Vault Secrets User"
