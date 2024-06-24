@@ -186,7 +186,7 @@ resource "azurerm_container_app" "ca" {
         metadata         = custom_scale_rule.value.metadata
 
         dynamic "authentication" {
-          for_each = try(custom_scale_rule.value.template.authentication, null) != null ? { default = custom_scale_rule.value.template.authentication } : {}
+          for_each = try(custom_scale_rule.value.authentication, null) != null ? { default = custom_scale_rule.value.template.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
