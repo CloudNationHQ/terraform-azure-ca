@@ -179,7 +179,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "custom_scale_rule" {
-      for_each = try(each.value.template.custom_scale_rule, null) != null ? { default = each.value.template.custom_scale_rule } : {}
+      for_each = try(each.value.template.custom_scale_rule, null) != null ? { default = each.value.custom_scale_rule } : {}
       content {
         name             = custom_scale_rule.value.name
         custom_rule_type = custom_scale_rule.value.custom_rule_type
