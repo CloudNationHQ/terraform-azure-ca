@@ -179,14 +179,14 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "custom_scale_rule" {
-      for_each = try(each.value.template.custom_scale_rule, null) != null ? { default = each.value.custom_scale_rule } : {}
+      for_each = try(each.value.template.custom_scale_rule, null) != null ? { default = each.value.template.custom_scale_rule } : {}
       content {
         name             = custom_scale_rule.value.name
         custom_rule_type = custom_scale_rule.value.custom_rule_type
         metadata         = custom_scale_rule.value.metadata
 
         dynamic "authentication" {
-          for_each = try(custom_scale_rule.value.authentication, null) != null ? { default = custom_scale_rule.value.template.authentication } : {}
+          for_each = try(custom_scale_rule.value.authentication, null) != null ? { default = custom_scale_rule.value.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
