@@ -291,7 +291,7 @@ resource "azurerm_container_app" "ca" {
     content {
       name                = secret.value.name
       value               = try(secret.value.value, null)
-      identity            = try(secret.value.value, null) == null ? coalesce(secret.value.identity, azurerm_user_assigned_identity.identity[secret.value.id_name].id) : null
+      identity            = try(secret.value.key_vault_secret_id, null) == null ? null : coalesce(secret.value.identity, azurerm_user_assigned_identity.identity[secret.value.id_name].id)
       key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
     }
   }
@@ -435,3 +435,24 @@ resource "azapi_resource" "containerjob" {
     }
   })
 }
+
+# locals {
+#   debug_secrets = [
+#     for sec in local.user_assigned_identities_secrets : {
+#       name                = sec.name
+#       value               = try(sec.test, null)
+#       identity            = try(sec.identity, null)
+#       key_vault_secret_id = try(sec.key_vault_secret_id, null)
+#       derived_identity    = try(sec.test, null) != null ? null : sec.id_name
+#     }
+#   ]
+# }
+
+# output "uai_secrets" {
+#   value = local.debug_secrets
+# }
+
+
+# output "merged_identities" {
+#   value = local.merged_identities
+# }
