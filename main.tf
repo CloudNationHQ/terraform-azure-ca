@@ -291,7 +291,7 @@ resource "azurerm_container_app" "ca" {
     content {
       name                = secret.value.name
       value               = try(secret.value.value, null)
-      identity            = try(secret.value.value, null) == null ? coalesce(secret.value.identity, azurerm_user_assigned_identity.identity[secret.value.id_name].id) : null
+      identity            = try(secret.value.key_vault_secret_id, null) == null ? null : coalesce(secret.value.identity, azurerm_user_assigned_identity.identity[secret.value.id_name].id)
       key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
     }
   }
