@@ -127,7 +127,6 @@ module "ca" {
       app1 = {
         revision_mode         = "Single"
         workload_profile_name = "Consumption"
-        kv_scope              = module.kv.vault.id
         template = {
           min_replicas    = 1
           max_replicas    = 3
