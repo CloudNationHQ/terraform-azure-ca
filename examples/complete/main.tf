@@ -266,7 +266,7 @@ module "ca" {
           scope  = module.acr.acr.id
 
           identity = {
-            name = "uai-own-name"
+            name = "uai-with-override-name"
           }
         }
       }
