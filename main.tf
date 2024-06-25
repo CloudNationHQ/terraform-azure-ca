@@ -327,7 +327,7 @@ resource "azurerm_container_app_custom_domain" "domain" {
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
-  for_each = { for identity in local.user_assigned_identities : identity.id_name => identity if contains(["UserAssigned", "SystemAssigned, UserAssigned"], identity.type) }
+  for_each = { for identity in local.user_assigned_identities : identity.id_name => identity }
 
   name                = each.key
   resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
@@ -345,7 +345,7 @@ resource "azurerm_user_assigned_identity" "identity_jobs" {
 }
 
 resource "azurerm_role_assignment" "role_secret_user" {
-  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity if identity.kv_scope != null }
+  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity }
 
   scope                = each.value.kv_scope
   role_definition_name = "Key Vault Secrets User"
