@@ -435,3 +435,24 @@ resource "azapi_resource" "containerjob" {
     }
   })
 }
+
+# locals {
+#   debug_secrets = [
+#     for sec in local.user_assigned_identities_secrets : {
+#       name                = sec.name
+#       value               = try(sec.test, null)
+#       identity            = try(sec.identity, null)
+#       key_vault_secret_id = try(sec.key_vault_secret_id, null)
+#       derived_identity    = try(sec.test, null) != null ? null : sec.id_name
+#     }
+#   ]
+# }
+
+# output "uai_secrets" {
+#   value = local.debug_secrets
+# }
+
+
+# output "merged_identities" {
+#   value = local.merged_identities
+# }
