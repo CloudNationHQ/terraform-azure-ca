@@ -274,10 +274,10 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "registry" {
-    for_each = try(local.user_assigned_identities, null)
+    for_each = { for id in local.user_assigned_identities : id.id_name => id if id.ca_name == each.key && try(id.server, null) != null }
     content {
       server               = registry.value.server
-      identity             = try(azurerm_user_assigned_identity.identity[registry.value.uai_name].id, null)
+      identity             = coalesce(registry.value.identity, azurerm_user_assigned_identity.identity[registry.value.id_name].id, null)
       username             = try(registry.value.username, null)
       password_secret_name = try(registry.value.password_secret_name, null)
     }
@@ -287,26 +287,23 @@ resource "azurerm_container_app" "ca" {
   ## Cannot remove secrets from Container Apps at this time due to a limitation in the Container Apps Service.
   ## Please see `https://github.com/microsoft/azure-container-apps/issues/395` for more details
   dynamic "secret" {
-    for_each = try(local.secrets, null)
+    for_each = { for sec in local.user_assigned_identities_secrets : sec.name => sec if sec.ca_name == each.key }
     content {
       name                = secret.value.name
       value               = try(secret.value.value, null)
-      identity            = try(secret.value.identity, null)
+      identity            = try(secret.value.key_vault_secret_id, null) == null ? null : coalesce(secret.value.identity, azurerm_user_assigned_identity.identity[secret.value.id_name].id)
       key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
     }
   }
+
   dynamic "identity" {
-    for_each = try(local.user_assigned_identities, null)
+    for_each = { default = local.user_assigned_identities }
 
     content {
-      type = try(identity.value.type, "SystemAssigned")
-      identity_ids = concat(
-        try([azurerm_user_assigned_identity.identity[identity.value.uai_name].id], []),
-        try(identity.value.identity_ids, [])
-      )
+      type         = try(identity.value.type, "UserAssigned")
+      identity_ids = [for id in local.user_assigned_identities : azurerm_user_assigned_identity.identity[id.id_name].id if id.ca_name == each.key]
     }
   }
-
   tags = try(each.value.tags, {})
 
 }
@@ -330,33 +327,33 @@ resource "azurerm_container_app_custom_domain" "domain" {
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
-  for_each = { for identity in local.user_assigned_identities : identity.uai_name => identity if contains(["UserAssigned", "SystemAssigned, UserAssigned"], identity.type) }
+  for_each = { for identity in local.user_assigned_identities : identity.id_name => identity }
 
-  name                = each.value.uai_name
+  name                = each.key
   resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
   location            = try(each.value.location, var.location)
   tags                = try(each.value.tags, var.environment.tags, null)
 }
 
 resource "azurerm_user_assigned_identity" "identity_jobs" {
-  for_each = { for identity in local.user_assigned_identities_jobs : identity.uai_name => identity if contains(["UserAssigned", "SystemAssigned, UserAssigned"], identity.type) }
+  for_each = { for identity in local.user_assigned_identities_jobs : identity.name => identity if contains(["UserAssigned", "SystemAssigned, UserAssigned"], identity.type) }
 
-  name                = each.value.uai_name
+  name                = each.value.name
   resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
   location            = try(each.value.location, var.location)
   tags                = try(each.value.tags, var.environment.tags, null)
 }
 
 resource "azurerm_role_assignment" "role_secret_user" {
-  for_each = { for identity in local.secrets : identity.uai_name => identity }
+  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity }
 
   scope                = each.value.kv_scope
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = each.value.identity_principal_id
+  principal_id         = azurerm_user_assigned_identity.identity[each.key].principal_id
 }
 
 resource "azurerm_role_assignment" "role_secret_user_jobs" {
-  for_each = { for identity in local.secrets_jobs : identity.uai_name => identity }
+  for_each = { for identity in local.secrets_jobs : identity.name => identity }
 
   scope                = each.value.kv_scope
   role_definition_name = "Key Vault Secrets User"
@@ -364,7 +361,7 @@ resource "azurerm_role_assignment" "role_secret_user_jobs" {
 }
 
 resource "azurerm_role_assignment" "role_acr_pull_jobs" {
-  for_each = { for identity in local.user_assigned_identities_jobs : identity.uai_name => identity }
+  for_each = { for identity in local.user_assigned_identities_jobs : identity.name => identity }
 
   scope                = each.value.scope
   role_definition_name = "AcrPull"
@@ -372,7 +369,7 @@ resource "azurerm_role_assignment" "role_acr_pull_jobs" {
 }
 
 resource "azurerm_role_assignment" "role_acr_pull" {
-  for_each = { for identity in local.user_assigned_identities : identity.uai_name => identity }
+  for_each = { for identity in local.user_assigned_identity_registry : identity.id_name => identity }
 
   scope                = each.value.scope
   role_definition_name = "AcrPull"
@@ -391,7 +388,7 @@ resource "azapi_resource" "containerjob" {
     content {
       type = try(identity.value.type, "SystemAssigned")
       identity_ids = concat(
-        try([azurerm_user_assigned_identity.identity_jobs[identity.value.uai_name].id], []),
+        try([azurerm_user_assigned_identity.identity_jobs[identity.value.name].id], []),
       try(identity.value.identity_ids, []))
     }
   }
@@ -438,3 +435,24 @@ resource "azapi_resource" "containerjob" {
     }
   })
 }
+
+# locals {
+#   debug_secrets = [
+#     for sec in local.user_assigned_identities_secrets : {
+#       name                = sec.name
+#       value               = try(sec.test, null)
+#       identity            = try(sec.identity, null)
+#       key_vault_secret_id = try(sec.key_vault_secret_id, null)
+#       derived_identity    = try(sec.test, null) != null ? null : sec.id_name
+#     }
+#   ]
+# }
+
+# output "uai_secrets" {
+#   value = local.debug_secrets
+# }
+
+
+# output "merged_identities" {
+#   value = local.merged_identities
+# }

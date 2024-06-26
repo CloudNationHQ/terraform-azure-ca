@@ -1,31 +1,52 @@
 locals {
-  user_assigned_identities = flatten(
-    [for ca_key, ca in lookup(var.environment, "container_apps", {}) :
-      [for uai_key, uai in lookup(ca, "identities", {}) :
-        {
-          key           = "${ca_key}-${uai_key}"
-          uai_name      = try(uai.name, "${var.naming.user_assigned_identity}-${ca_key}")
-          type          = uai.type
-          identity_ids  = try(uai.identity_ids, [])
-          resourcegroup = try(uai.resourcegroup, var.environment.resourcegroup, null)
-          location      = try(uai.location, var.environment.location, null)
-          scopes        = try(uai.scopes, null)
-          tags          = try(uai.tags, {})
-          server        = ca.registry.server
-          scope         = try(ca.registry.scope, null)
-          identity      = try(ca.registry.identity, uai.name, "${var.naming.user_assigned_identity}-${ca_key}")
-          password      = try(ca.registry.password, null)
-          username      = try(ca.registry.username, null)
-        }
-    ]]
+  user_assigned_identities_secrets = flatten([for ca_key, ca in lookup(var.environment, "container_apps", {}) :
+    [for sec_key, sec in lookup(ca, "secrets", {}) :
+      {
+        ca_name             = ca_key
+        name                = try(sec.name, sec_key)
+        value               = try(sec.value, null)
+        key_vault_secret_id = try(sec.key_vault_secret_id, null)
+        kv_scope            = try(sec.kv_scope, ca.kv_scope, null)
+        id_name             = try(sec.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
+        identity            = try(sec.identity.id, null)
+        resourcegroup       = try(sec.identity.resourcegroup, var.environment.resourcegroup, null)
+        location            = try(sec.identity.location, var.environment.location, null)
+        tags                = try(sec.identity.tags, {})
+        type                = try(sec.identity.type, "UserAssigned")
+    }]
+  ])
+
+  user_assigned_identity_registry = flatten([for ca_key, ca in lookup(var.environment, "container_apps", {}) :
+    {
+      ca_name              = ca_key
+      scope                = try(ca.registry.scope, null)
+      server               = ca.registry.server
+      username             = try(ca.registry.username, null)
+      password_secret_name = try(ca.registry.password_secret_name, null)
+      id_name              = try(ca.registry.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
+      identity             = try(ca.registry.identity.id, null)
+      resourcegroup        = try(ca.registry.identity.resourcegroup, var.environment.resourcegroup, null)
+      location             = try(ca.registry.identity.location, var.environment.location, null)
+      tags                 = try(ca.registry.identity.tags, {})
+      type                 = try(ca.registry.identity.type, "UserAssigned")
+      # SystemAssigned MI not recommended due to chicken-egg problem:
+      # CA can't be deployed without image, image can't be pulled without identity, identity can't be created without CA
+    }
+  ])
+
+  merged_identities = merge(
+    { for identity in local.user_assigned_identities_secrets : identity.id_name => identity },
+    { for identity in local.user_assigned_identity_registry : identity.id_name => identity }
   )
+
+  user_assigned_identities = [for k, v in local.merged_identities : v]
 
   user_assigned_identities_jobs = flatten(
     [for job_key, job in lookup(var.environment, "jobs", {}) :
       [for uai_key, uai in lookup(job, "identities", {}) :
         {
           key           = "${job_key}-${uai_key}"
-          uai_name      = try(uai.name, "${var.naming.user_assigned_identity}-${job_key}")
+          name          = try(uai.name, "${var.naming.user_assigned_identity}-${job_key}")
           type          = uai.type
           identity_ids  = try(uai.identity_ids, [])
           resourcegroup = try(uai.resourcegroup, var.environment.resourcegroup, null)
@@ -34,24 +55,6 @@ locals {
           tags          = try(uai.tags, {})
         }
     ]]
-  )
-
-  secrets = flatten(
-    [for ca_key, ca in lookup(var.environment, "container_apps", {}) :
-      [for sec_key, sec in lookup(ca, "secrets", {}) :
-        [for uai_key, uai in lookup(ca, "identities", {}) : {
-          key                   = "${ca_key}-${sec_key}"
-          uai_name              = try(uai.name, "${var.naming.user_assigned_identity}-${ca_key}")
-          name                  = sec_key
-          value                 = try(sec.value, null)
-          identity_principal_id = try(sec.value, null) == null ? try(sec.identity, azurerm_user_assigned_identity.identity[try(uai.name, "${var.naming.user_assigned_identity}-${ca_key}")].principal_id) : null
-          identity              = try(sec.value, null) == null ? try(sec.identity, azurerm_user_assigned_identity.identity[try(uai.name, "${var.naming.user_assigned_identity}-${ca_key}")].id) : null
-          key_vault_secret_id   = try(sec.key_vault_secret_id, null)
-          kv_scope              = try(sec.kv_scope, ca.kv_scope, null)
-          }
-        ]
-      ]
-    ]
   )
 
   secrets_jobs = flatten(
@@ -123,7 +126,7 @@ locals {
       identities = [
         for uai_key, uai in lookup(job, "identities", {}) : {
           key           = "${job_key}-${uai_key}"
-          uai_name      = try(uai.name, "${var.naming.user_assigned_identity}-${job_key}")
+          name          = try(uai.name, "${var.naming.user_assigned_identity}-${job_key}")
           type          = uai.type
           identity_ids  = try(uai.identity_ids, [])
           resourcegroup = try(uai.resourcegroup, var.environment.resourcegroup, null)

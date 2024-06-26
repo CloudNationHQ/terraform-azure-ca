@@ -79,13 +79,6 @@ module "ca" {
           }
         }
 
-        identities = {
-          uai1 = {
-            type = "UserAssigned"
-            name = "uai-demo-dev"
-          }
-        }
-
         registry = {
           server = module.acr.acr.login_server
           scope  = module.acr.acr.id
