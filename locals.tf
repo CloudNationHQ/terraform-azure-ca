@@ -6,15 +6,15 @@ locals {
         name                = try(sec.name, sec_key)
         value               = try(sec.value, null)
         key_vault_secret_id = try(sec.key_vault_secret_id, null)
-        kv_scope            = try(sec.kv_scope, ca.kv_scope, null)
+        kv_scope            = try(sec.kv_scope, ca.kv_scope)
         id_name             = try(sec.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
-        identity            = try(sec.identity.id, null)
+        existing            = try(sec.identity.existing, false)
         resourcegroup       = try(sec.identity.resourcegroup, var.environment.resourcegroup, null)
         location            = try(sec.identity.location, var.environment.location, null)
         tags                = try(sec.identity.tags, {})
         type                = try(sec.identity.type, "UserAssigned")
-    }]
-  ])
+      }
+  if contains(keys(sec), "value") == false]])
 
   user_assigned_identity_registry = flatten([for ca_key, ca in lookup(var.environment, "container_apps", {}) :
     {
@@ -24,7 +24,7 @@ locals {
       username             = try(ca.registry.username, null)
       password_secret_name = try(ca.registry.password_secret_name, null)
       id_name              = try(ca.registry.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
-      identity             = try(ca.registry.identity.id, null)
+      existing             = try(ca.registry.identity.existing, false)
       resourcegroup        = try(ca.registry.identity.resourcegroup, var.environment.resourcegroup, null)
       location             = try(ca.registry.identity.location, var.environment.location, null)
       tags                 = try(ca.registry.identity.tags, {})
@@ -32,7 +32,7 @@ locals {
       # SystemAssigned MI not recommended due to chicken-egg problem:
       # CA can't be deployed without image, image can't be pulled without identity, identity can't be created without CA
     }
-  ])
+  if contains(keys(ca.registry), "username") == false])
 
   merged_identities = merge(
     { for identity in local.user_assigned_identities_secrets : identity.id_name => identity },
