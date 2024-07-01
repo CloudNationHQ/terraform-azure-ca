@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.2.0...v0.2.1) (2024-07-01)
+
+
+### Bug Fixes
+
+* make kv_scope optional for secret retrieval when identity is not required ([#17](https://github.com/CloudNationHQ/terraform-azure-ca/issues/17)) ([29b264f](https://github.com/CloudNationHQ/terraform-azure-ca/commit/29b264f12e6069f34e53757f030664789db18388))
+
 ## [0.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.1.0...v0.2.0) (2024-06-26)
 
 
