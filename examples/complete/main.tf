@@ -96,7 +96,6 @@ module "ca" {
   source  = "cloudnationhq/ca/azure"
   version = "~> 0.1"
 
-
   naming = local.naming
 
   environment = {
@@ -160,8 +159,9 @@ module "ca" {
         }
 
         registry = {
-          server = module.acr.acr.login_server
-          scope  = module.acr.acr.id
+          server   = module.acr.acr.login_server
+          username = module.acr.acr.admin_username
+          password = module.acr.acr.admin_password
         }
       }
 
@@ -219,7 +219,6 @@ module "ca" {
       app3 = {
         revision_mode         = "Single"
         workload_profile_name = "Consumption"
-        kv_scope              = module.kv.vault.id
         template = {
           min_replicas    = 1
           max_replicas    = 3
@@ -289,8 +288,11 @@ module "ca" {
                 DEBUG = {
                   value = "True"
                 }
-                SECRET_KEY = {
-                  secret_name = "secret-key"
+                SECRET_KEY1 = {
+                  secret_name = "secret-key1"
+                }
+                SECRET_KEY2 = {
+                  secret_name = "secret-key2"
                 }
               }
             }
@@ -298,12 +300,16 @@ module "ca" {
         }
 
         secrets = {
-          secret-key = {
+          secret-key1 = {
             key_vault_secret_id = module.kv.secrets.secret1.versionless_id
             kv_scope            = module.kv.vault.id
             identity = {
               name = "uai-secret-with-override-name"
             }
+          }
+          secret-key2 = {
+            key_vault_secret_id = module.kv.secrets.secret1.versionless_id
+            kv_scope            = module.kv.vault.id
           }
         }
 
