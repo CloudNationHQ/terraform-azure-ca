@@ -5,7 +5,7 @@ This example illustrates the default setup, in its simplest form.
 ```hcl
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.2"
+  version = "~> 0.3"
 
   naming = local.naming
 
