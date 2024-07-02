@@ -5,7 +5,7 @@ This example highlights the complete usage.
 ```hcl
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.1"
+  version = "~> 0.2"
 
   naming = local.naming
 
@@ -76,13 +76,6 @@ module "ca" {
               latest_revision = true
               percentage      = 100
             }
-          }
-        }
-
-        identities = {
-          uai1 = {
-            type = "UserAssigned"
-            name = "uai-demo-dev"
           }
         }
 
