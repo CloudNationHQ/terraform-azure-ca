@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.2.1...v0.3.0) (2024-07-02)
+
+
+### Features
+
+* add issue template ([#20](https://github.com/CloudNationHQ/terraform-azure-ca/issues/20)) ([6c436b5](https://github.com/CloudNationHQ/terraform-azure-ca/commit/6c436b5af7432fd76b2c57d10517f20412eec83f))
+* **deps:** bump github.com/gruntwork-io/terratest in /tests ([#18](https://github.com/CloudNationHQ/terraform-azure-ca/issues/18)) ([dd2f9bc](https://github.com/CloudNationHQ/terraform-azure-ca/commit/dd2f9bcaf34dbb10562bb3f9c37c3b9e89677ef2))
+* **deps:** bump github.com/hashicorp/go-getter in /tests ([#15](https://github.com/CloudNationHQ/terraform-azure-ca/issues/15)) ([51623b3](https://github.com/CloudNationHQ/terraform-azure-ca/commit/51623b31412a86f48ef05bdab7d9ee65b89bcd08))
+
+## [0.2.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.2.0...v0.2.1) (2024-07-01)
+
+
+### Bug Fixes
+
+* make kv_scope optional for secret retrieval when identity is not required ([#17](https://github.com/CloudNationHQ/terraform-azure-ca/issues/17)) ([29b264f](https://github.com/CloudNationHQ/terraform-azure-ca/commit/29b264f12e6069f34e53757f030664789db18388))
+
 ## [0.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.1.0...v0.2.0) (2024-06-26)
 
 
