@@ -4,11 +4,11 @@ locals {
       {
         ca_name             = ca_key
         name                = try(sec.name, sec_key)
-        value               = try(sec.value, null)
         key_vault_secret_id = try(sec.key_vault_secret_id, null)
         kv_scope            = try(sec.kv_scope, ca.kv_scope)
+        principal_id        = try(sec.identity.principal_id, null)
+        identity_id         = lookup(lookup(sec, "identity", {}), "id", {})
         id_name             = try(sec.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
-        existing            = try(sec.identity.existing, false)
         resourcegroup       = try(sec.identity.resourcegroup, var.environment.resourcegroup, null)
         location            = try(sec.identity.location, var.environment.location, null)
         tags                = try(sec.identity.tags, {})
@@ -18,28 +18,38 @@ locals {
 
   user_assigned_identity_registry = flatten([for ca_key, ca in lookup(var.environment, "container_apps", {}) :
     {
-      ca_name              = ca_key
-      scope                = try(ca.registry.scope, null)
-      server               = ca.registry.server
-      username             = try(ca.registry.username, null)
-      password_secret_name = try(ca.registry.password_secret_name, null)
-      id_name              = try(ca.registry.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
-      existing             = try(ca.registry.identity.existing, false)
-      resourcegroup        = try(ca.registry.identity.resourcegroup, var.environment.resourcegroup, null)
-      location             = try(ca.registry.identity.location, var.environment.location, null)
-      tags                 = try(ca.registry.identity.tags, {})
-      type                 = try(ca.registry.identity.type, "UserAssigned")
+      ca_name       = ca_key
+      scope         = try(ca.registry.scope, null)
+      server        = ca.registry.server
+      principal_id  = try(ca.registry.identity.principal_id, null)
+      identity_id   = lookup(lookup(ca.registry, "identity", {}), "id", {})
+      id_name       = try(ca.registry.identity.name, "${var.naming.user_assigned_identity}-${ca_key}")
+      resourcegroup = try(ca.registry.identity.resourcegroup, var.environment.resourcegroup, null)
+      location      = try(ca.registry.identity.location, var.environment.location, null)
+      tags          = try(ca.registry.identity.tags, {})
+      type          = try(ca.registry.identity.type, "UserAssigned")
       # SystemAssigned MI not recommended due to chicken-egg problem:
       # CA can't be deployed without image, image can't be pulled without identity, identity can't be created without CA
     }
   if contains(keys(ca.registry), "username") == false])
 
-  merged_identities = merge(
-    { for identity in local.user_assigned_identities_secrets : identity.id_name => identity },
+  ## Multiple user assigned identities with the same name are implicitly generated when multiple secrets are defined
+  ## To avoid this, we create a list of unique identity names and then create a map of identity objects
+  unique_uai_secrets     = distinct([for identity in local.user_assigned_identities_secrets : identity.id_name])
+  unique_uai_secrets_map = { for name in local.unique_uai_secrets : name => [for identity in local.user_assigned_identities_secrets : identity if identity.id_name == name][0] }
+
+
+  ## Merge all identities, including those with identity_id (Bring Your Own UAI) - needed to set identity_ids in identity block
+  merged_identities_all = merge(
+    { for identity in local.unique_uai_secrets_map : identity.id_name => identity },
     { for identity in local.user_assigned_identity_registry : identity.id_name => identity }
   )
 
-  user_assigned_identities = [for k, v in local.merged_identities : v]
+  ## Merge all identities, except those with identity_id (Bring Your Own UAI) - needed to generate User Assigned Identities
+  merged_identities_filtered = merge(
+    { for identity in local.unique_uai_secrets_map : identity.id_name => identity if identity.identity_id == {} },
+    { for identity in local.user_assigned_identity_registry : identity.id_name => identity if identity.identity_id == {} }
+  )
 
   user_assigned_identities_jobs = flatten(
     [for job_key, job in lookup(var.environment, "jobs", {}) :

@@ -274,11 +274,11 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "registry" {
-    for_each = { for id in local.user_assigned_identity_registry : id.id_name => id if id.ca_name == each.key && try(id.server, null) != null }
+    for_each = try(each.value.registry, null) != null ? { default = each.value.registry } : {}
     content {
       server = registry.value.server
-      identity = registry.value.existing == true ? data.azurerm_user_assigned_identity.identity_registry[registry.value.id_name].id : registry.value.existing == false && try(
-      registry.value.username, null) == null ? azurerm_user_assigned_identity.identity[registry.value.id_name].id : null
+      identity = try(registry.value.username, null) == null ? try(registry.value.identity.id,
+      azurerm_user_assigned_identity.identity[try(registry.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id, ) : null
       username             = try(registry.value.username, null)
       password_secret_name = try(registry.value.password_secret_name, null)
     }
@@ -288,33 +288,30 @@ resource "azurerm_container_app" "ca" {
   ## Cannot remove secrets from Container Apps at this time due to a limitation in the Container Apps Service.
   ## Please see `https://github.com/microsoft/azure-container-apps/issues/395` for more details
   dynamic "secret" {
-    for_each = { for key, sec in try(each.value.secrets, {}) : key => sec }
+    for_each = { for key, sec in lookup(each.value, "secrets", {}) : key => sec }
     content {
       name  = secret.key
       value = try(secret.value.value, null)
-      identity = try(secret.value.key_vault_secret_id, null) == null ? null : try(secret.value.identity.existing, "") == true ? data.azurerm_user_assigned_identity.identity_secret[
-        secret.value.identity.name].id : azurerm_user_assigned_identity.identity[
-      coalesce(try(secret.value.identity.name, null), "${var.naming.user_assigned_identity}-${each.key}")].id
+      identity = try(
+        secret.value.key_vault_secret_id, null) == null ? null : try(secret.value.identity.id, null) != null ? secret.value.identity.id : azurerm_user_assigned_identity.identity[try(
+      secret.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id
       key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
     }
   }
 
   dynamic "identity" {
-    for_each = length([for id in try(local.user_assigned_identities, null) : id if id.ca_name == each.key
-      ]) > 0 || length([for id in try(local.user_assigned_identity_registry, null) : id if id.ca_name == each.key
-      ]) > 0 || length([for id in try(local.user_assigned_identities_secrets, null) : id if id.ca_name == each.key
-    ]) > 0 ? { default = local.user_assigned_identities } : {}
+    for_each = length([for id in local.merged_identities_all : id if id.ca_name == each.key
+    ]) > 0 ? { default = local.merged_identities_all } : {}
 
     content {
       type = try(identity.value.type, "UserAssigned")
-      identity_ids = concat([for id in local.user_assigned_identities : azurerm_user_assigned_identity.identity[id.id_name].id if id.ca_name == each.key && id.existing == false],
-        [for id in local.user_assigned_identity_registry : data.azurerm_user_assigned_identity.identity_registry[id.id_name].id if id.ca_name == each.key && id.existing == true],
-      [for id in local.user_assigned_identities_secrets : data.azurerm_user_assigned_identity.identity_secret[id.id_name].id if id.ca_name == each.key && id.existing == true])
+      identity_ids = concat([for id in identity.value : azurerm_user_assigned_identity.identity[id.id_name].id if id.identity_id == {} && id.ca_name == each.key],
+      [for id in identity.value : id.identity_id if id.identity_id != {} && id.ca_name == each.key])
     }
   }
   tags = try(each.value.tags, {})
 
-  depends_on = [azurerm_role_assignment.role_acr_pull, azurerm_role_assignment.role_secret_user]
+  depends_on = [azurerm_role_assignment.role_secret_user, azurerm_role_assignment.role_acr_pull]
 }
 
 resource "azurerm_container_app_environment_certificate" "certificate" {
@@ -336,12 +333,28 @@ resource "azurerm_container_app_custom_domain" "domain" {
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
-  for_each = { for identity in local.user_assigned_identities : identity.id_name => identity if identity.existing == false }
+  for_each = { for identity in local.merged_identities_filtered : identity.id_name => identity }
 
   name                = each.key
   resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
   location            = try(each.value.location, var.location)
   tags                = try(each.value.tags, var.environment.tags, null)
+}
+
+resource "azurerm_role_assignment" "role_secret_user" {
+  for_each = { for id in local.unique_uai_secrets_map : id.id_name => id }
+
+  scope                = each.value.kv_scope
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
+}
+
+resource "azurerm_role_assignment" "role_acr_pull" {
+  for_each = { for id in local.user_assigned_identity_registry : id.id_name => id }
+
+  scope                = each.value.scope
+  role_definition_name = "AcrPull"
+  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
 }
 
 resource "azurerm_user_assigned_identity" "identity_jobs" {
@@ -351,14 +364,6 @@ resource "azurerm_user_assigned_identity" "identity_jobs" {
   resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
   location            = try(each.value.location, var.location)
   tags                = try(each.value.tags, var.environment.tags, null)
-}
-
-resource "azurerm_role_assignment" "role_secret_user" {
-  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity }
-
-  scope                = each.value.kv_scope
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = try(each.value.existing, null) == true ? data.azurerm_user_assigned_identity.identity_secret[each.key].principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
 }
 
 resource "azurerm_role_assignment" "role_secret_user_jobs" {
@@ -375,29 +380,6 @@ resource "azurerm_role_assignment" "role_acr_pull_jobs" {
   scope                = each.value.scope
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.identity_jobs[each.key].principal_id
-}
-
-resource "azurerm_role_assignment" "role_acr_pull" {
-  for_each = { for identity in local.user_assigned_identity_registry : identity.id_name => identity }
-
-  scope                = each.value.scope
-  role_definition_name = "AcrPull"
-  principal_id         = try(each.value.existing, null) == true ? data.azurerm_user_assigned_identity.identity_registry[each.key].principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
-}
-
-
-data "azurerm_user_assigned_identity" "identity_secret" {
-  for_each = { for identity in local.user_assigned_identities_secrets : identity.id_name => identity if identity.existing == true }
-
-  name                = each.key
-  resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
-}
-
-data "azurerm_user_assigned_identity" "identity_registry" {
-  for_each = { for identity in local.user_assigned_identity_registry : identity.id_name => identity if identity.existing == true }
-
-  name                = each.key
-  resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
 }
 
 resource "azapi_resource" "containerjob" {
