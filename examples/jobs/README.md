@@ -5,14 +5,14 @@ This example sets up container apps jobs with event-driven and scheduled trigger
 ```hcl
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.4"
+  version = "~> 1.0"
 
   naming = local.naming
 
   environment = {
     name             = module.naming.container_app_environment.name
     location         = module.rg.groups.demo.location
-    resourcegroup    = module.rg.groups.demo.name
+    resource_group   = module.rg.groups.demo.name
     resourcegroup_id = module.rg.groups.demo.id
 
     jobs = local.jobs
@@ -24,90 +24,187 @@ The module uses the below locals for configuration:
 
 ```hcl
 locals {
-  jobs = {
+   jobs = {
     job1 = {
-      trigger_type = "Event"
+      kv_scope                   = module.kv.vault.id
+      replica_timeout_in_seconds = 300
       template = {
-        containers = {
-          container1 = {
-            image = "nginx:latest"
-            env = {
-              ALLOWED_HOSTS = {
-                value = "*"
-              }
+        container = {
+          name  = "container1"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+            SECRET_KEY = {
+              secret_name = "personal-access-token"
             }
           }
         }
       }
-      rules = {
-        rule1 = {
-          name = "rule1"
-          type = "github-runner"
-          metadata = {
-            githubAPIURL              = "https://api.github.com"
-            runnerScope               = "repo"
-            targetWorkflowQueueLength = "1"
-          }
-          auth = {
-            auth1 = {
-              secret_ref        = "personal-access-token"
+      event_trigger_config = {
+        scale = {
+          rules = {
+            name             = "rule1"
+            custom_rule_type = "github-runner"
+            metadata = {
+              githubAPIURL              = "https://api.github.com"
+              runnerScope               = "repo"
+              targetWorkflowQueueLength = "1"
+            }
+            authentication = {
+              secret_name       = "personal-access-token"
               trigger_parameter = "personalAccessToken"
             }
           }
         }
       }
 
-      identities = {
-        uai1 = {
-          type = "UserAssigned"
-          name = "uai1-demo-dev"
+      secrets = {
+        personal-access-token = {
+          key_vault_secret_id = module.kv.secrets.secret1.versionless_id
         }
       }
 
       registry = {
-        server   = module.acr.acr.login_server
-        scope    = module.acr.acr.id
-        identity = "uai1-demo-dev"
+        server = module.acr.acr.login_server
+        scope  = module.acr.acr.id
       }
+
     }
     job2 = {
-      cron_expression = "0 0 * * *"
-      trigger_type    = "Schedule"
-      kv_scope        = module.kv.vault.id
-
+      kv_scope                   = module.kv.vault.id
+      replica_timeout_in_seconds = 300
       template = {
-        containers = {
-          container1 = {
-            image = "nginx:latest"
-            env = {
-              ALLOWED_HOSTS = {
-                value = "*"
-              }
-              SECRET_KEY = {
-                secret_name = "secret-key"
-              }
+        container = {
+          name  = "container2"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+            SECRET_KEY = {
+              secret_name = "secret-key"
+            }
+          }
+        }
+      }
+
+      schedule_trigger_config = {
+        cron_expression          = "0 0 * * *"
+        parallelism              = 4
+        replica_completion_count = 2
+      }
+
+      secrets = {
+        secret-key = {
+          key_vault_secret_id = module.kv.secrets.secret1.versionless_id
+          identity = {
+            name = "uai-job2-secret"
+          }
+        }
+      }
+
+      registry = {
+        server = module.acr.acr.login_server
+        scope  = module.acr.acr.id
+        identity = {
+          name = "uai-job2-registry"
+        }
+      }
+    }
+    job3 = {
+      replica_timeout_in_seconds = 300
+      template = {
+        container = {
+          name  = "container1"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+            SECRET_KEY = {
+              secret_name = "personal-access-token"
+            }
+          }
+        }
+      }
+      event_trigger_config = {
+        scale = {
+          rules = {
+            name             = "rule1"
+            custom_rule_type = "github-runner"
+            metadata = {
+              githubAPIURL              = "https://api.github.com"
+              runnerScope               = "repo"
+              targetWorkflowQueueLength = "1"
+            }
+            authentication = {
+              secret_name       = "personal-access-token"
+              trigger_parameter = "personalAccessToken"
             }
           }
         }
       }
 
       secrets = {
-        secret-key = {
-          key_vault_secret_id = module.kv.secrets.secret1.versionless_id
-          identity            = "uai2-demo-dev"
+        personal-access-token = {
+          value = "secret-string"
         }
-      }
-      identities = {
-        uai2 = {
-          type = "UserAssigned"
-          name = "uai2-demo-dev"
+        secret-key = {
+          value = module.acr.acr.admin_password
         }
       }
 
       registry = {
-        server   = module.acr.acr.login_server
-        scope    = module.acr.acr.id
-        identity = "uai2-demo-dev"
+        server               = module.acr.acr.login_server
+        username             = module.acr.acr.admin_username
+        password_secret_name = "secret-key"
+      }
+
+    }
+    job4 = {
+      kv_scope                   = module.kv.vault.id
+      replica_timeout_in_seconds = 300
+      template = {
+        container = {
+          name  = "container4"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+            SECRET_KEY = {
+              secret_name = "secret-key"
+            }
+          }
+        }
+      }
+
+      manual_trigger_config = {
+        parallelism              = 4
+        replica_completion_count = 2
+      }
+
+      secrets = {
+        secret-key = {
+          key_vault_secret_id = module.kv.secrets.secret1.versionless_id
+          identity = {
+            name         = azurerm_user_assigned_identity.identity_sec.name
+            id           = azurerm_user_assigned_identity.identity_sec.id
+            principal_id = azurerm_user_assigned_identity.identity_sec.principal_id
+          }
+        }
+      }
+
+      registry = {
+        server = module.acr.acr.login_server
+        scope  = module.acr.acr.id
+        identity = {
+          name         = azurerm_user_assigned_identity.identity_reg.name
+          id           = azurerm_user_assigned_identity.identity_reg.id
+          principal_id = azurerm_user_assigned_identity.identity_reg.principal_id
+        }
       }
     }
   }

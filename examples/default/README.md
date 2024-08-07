@@ -5,14 +5,14 @@ This example illustrates the default setup, in its simplest form.
 ```hcl
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.4"
+  version = "~> 1.0"
 
   naming = local.naming
 
   environment = {
     name          = module.naming.container_app_environment.name
     location      = module.rg.groups.demo.location
-    resourcegroup = module.rg.groups.demo.name
+    resource_group = module.rg.groups.demo.name
 
     container_apps = {
       app1 = {

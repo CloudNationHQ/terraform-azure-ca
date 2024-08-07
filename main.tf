@@ -1,7 +1,7 @@
 resource "azurerm_container_app_environment" "cae" {
   name                               = var.environment.name
   location                           = try(var.environment.location, var.location)
-  resource_group_name                = try(var.environment.resourcegroup, var.resourcegroup)
+  resource_group_name                = coalesce(lookup(var.environment, "resource_group", null), var.resource_group)
   infrastructure_subnet_id           = try(var.environment.infrastructure_subnet_id, null)
   infrastructure_resource_group_name = try(var.environment.infrastructure_resource_group_name, null)
   internal_load_balancer_enabled     = try(var.environment.internal_load_balancer_enabled, null)
@@ -27,7 +27,7 @@ resource "azurerm_container_app" "ca" {
 
   name                         = try(each.value.name, "${var.naming.container_app}-${each.key}")
   container_app_environment_id = azurerm_container_app_environment.cae.id
-  resource_group_name          = try(each.value.resourcegroup, var.environment.resourcegroup, var.resourcegroup)
+  resource_group_name          = coalesce(lookup(each.value, "resource_group", null), var.environment.resource_group)
   revision_mode                = try(each.value.revision_mode, "Single")
   workload_profile_name        = try(each.value.workload_profile_name, null)
 
@@ -37,7 +37,7 @@ resource "azurerm_container_app" "ca" {
     revision_suffix = try(each.value.template.revision_suffix, null)
 
     dynamic "init_container" {
-      for_each = try(each.value.init_container, null) != null ? { default = each.value.init_container } : {}
+      for_each = try(each.value.template.init_container, null) != null ? { default = each.value.template.init_container } : {}
       content {
         name    = init_container.value.name
         image   = init_container.value.image
@@ -333,10 +333,10 @@ resource "azurerm_container_app_custom_domain" "domain" {
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
-  for_each = { for identity in local.merged_identities_filtered : identity.id_name => identity }
+  for_each = { for id in local.merged_identities_filtered : id.id_name => id }
 
   name                = each.key
-  resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
+  resource_group_name = try(each.value.resource_group, var.resource_group)
   location            = try(each.value.location, var.location)
   tags                = try(each.value.tags, var.environment.tags, null)
 }
@@ -357,87 +357,3 @@ resource "azurerm_role_assignment" "role_acr_pull" {
   principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
 }
 
-resource "azurerm_user_assigned_identity" "identity_jobs" {
-  for_each = { for identity in local.user_assigned_identities_jobs : identity.name => identity if contains(["UserAssigned", "SystemAssigned, UserAssigned"], identity.type) }
-
-  name                = each.value.name
-  resource_group_name = try(each.value.resourcegroup, var.resourcegroup)
-  location            = try(each.value.location, var.location)
-  tags                = try(each.value.tags, var.environment.tags, null)
-}
-
-resource "azurerm_role_assignment" "role_secret_user_jobs" {
-  for_each = { for identity in local.secrets_jobs : identity.name => identity }
-
-  scope                = each.value.kv_scope
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = each.value.identity_principal_id
-}
-
-resource "azurerm_role_assignment" "role_acr_pull_jobs" {
-  for_each = { for identity in local.user_assigned_identities_jobs : identity.name => identity }
-
-  scope                = each.value.scope
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.identity_jobs[each.key].principal_id
-}
-
-resource "azapi_resource" "containerjob" {
-  for_each  = { for key, job in local.job_containers : key => job }
-  type      = "Microsoft.App/jobs@2023-11-02-preview"
-  name      = each.value.name
-  location  = each.value.location
-  parent_id = each.value.resourcegroup_id
-
-  dynamic "identity" {
-    for_each = try(each.value.identities, null)
-    content {
-      type = try(identity.value.type, "SystemAssigned")
-      identity_ids = concat(
-        try([azurerm_user_assigned_identity.identity_jobs[identity.value.name].id], []),
-      try(identity.value.identity_ids, []))
-    }
-  }
-
-  body = jsonencode({
-    properties = {
-      configuration = {
-        replicaRetryLimit = each.value.retry_limit
-        replicaTimeout    = each.value.timeout
-        triggerType       = each.value.trigger_type
-        eventTriggerConfig = each.value.trigger_type == "Event" ? {
-          parallelism            = each.value.parallelism
-          replicaCompletionCount = each.value.replica_completion_count
-          scale = {
-            maxExecutions   = each.value.scale.max_executions
-            minExecutions   = each.value.scale.min_executions
-            pollingInterval = each.value.scale.polling_interval
-            rules           = each.value.scale.rules
-          }
-        } : null
-        scheduleTriggerConfig = each.value.trigger_type == "Schedule" ? {
-          cronExpression         = each.value.cron_expression
-          parallelism            = each.value.parallelism
-          replicaCompletionCount = each.value.replica_completion_count
-        } : null
-        manualTriggerConfig = each.value.trigger_type == "Manual" ? {
-          parallelism            = each.value.parallelism
-          replicaCompletionCount = each.value.replica_completion_count
-        } : null
-        secrets = each.value.secrets
-        registries = [
-          {
-            identity          = try(azurerm_user_assigned_identity.identity_jobs[each.value.registry.identity].id, null)
-            passwordSecretRef = try(each.value.registry.password, "")
-            username          = try(each.value.registry.username, "")
-            server            = try(each.value.registry.server, null)
-          }
-        ]
-      }
-      environmentId = azurerm_container_app_environment.cae.id
-      template = {
-        containers = each.value.containers
-      }
-    }
-  })
-}
