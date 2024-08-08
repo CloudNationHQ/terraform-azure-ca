@@ -1,30 +1,5 @@
-This example sets up container apps jobs with event-driven and scheduled triggers for automated tasks.
-
-## Usage
-
-```hcl
-module "ca" {
-  source  = "cloudnationhq/ca/azure"
-  version = "~> 1.0"
-
-  naming = local.naming
-
-  environment = {
-    name             = module.naming.container_app_environment.name
-    location         = module.rg.groups.demo.location
-    resource_group   = module.rg.groups.demo.name
-    resourcegroup_id = module.rg.groups.demo.id
-
-    jobs = local.jobs
-  }
-}
-```
-
-The module uses the below locals for configuration:
-
-```hcl
 locals {
-   jobs = {
+  jobs = {
     job1 = {
       kv_scope                   = module.kv.vault.id
       replica_timeout_in_seconds = 300
@@ -207,6 +182,25 @@ locals {
         }
       }
     }
+    job5 = {
+      kv_scope                   = module.kv.vault.id
+      replica_timeout_in_seconds = 300
+      template = {
+        container = {
+          name  = "container5"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+          }
+        }
+      }
+
+      manual_trigger_config = {
+        parallelism              = 4
+        replica_completion_count = 2
+      }
+    }
   }
 }
-```

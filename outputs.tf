@@ -1,8 +1,13 @@
 output "container_apps" {
   description = "contains all container app(s) configuration"
   value       = azurerm_container_app.ca
-
 }
+
+output "container_app_jobs" {
+  description = "contains all container app jobs configuration"
+  value       = azurerm_container_app_job.job
+}
+
 output "environment" {
   description = "contains all container app environment configuration"
   value       = azurerm_container_app_environment.cae

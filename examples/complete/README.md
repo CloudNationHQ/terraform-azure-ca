@@ -5,14 +5,14 @@ This example highlights the complete usage.
 ```hcl
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.4"
+  version = "~> 1.0"
 
   naming = local.naming
 
   environment = {
     name                           = module.naming.container_app_environment.name
     location                       = module.rg.groups.demo.location
-    resourcegroup                  = module.rg.groups.demo.name
+    resource_group                 = module.rg.groups.demo.name
     infrastructure_subnet_id       = module.vnet.subnets.cae.id
     log_analytics_workspace_id     = module.law.workspace.id
     zone_redundancy_enabled        = true

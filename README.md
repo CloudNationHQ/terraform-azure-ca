@@ -28,22 +28,20 @@ A last key goal is to separate logic from configuration in the module, thereby e
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
-| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 1.13 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.100 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.114 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 1.13 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.100 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.114 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [azapi_resource](https://registry.terraform.io/providers/azure/azapi/latest/docs/resources/resource) | resource |
 | [azurerm_container_app](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app) | resource |
+| [azurerm_container_app_job](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_job) | resource |
 | [azurerm_container_app_custom_domain](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_custom_domain) | resource |
 | [azurerm_container_app_environment](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) | resource |
 | [azurerm_container_app_environment_certificate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment_certificate) | resource |
@@ -54,9 +52,9 @@ A last key goal is to separate logic from configuration in the module, thereby e
 
 | Name | Description | Type | Required |
 | :-- | :-- | :-- | :-- |
-| `ca_environment` | holds all the container app environment related configuration | object | yes |
+| `environment` | holds all the container app environment related configuration | object | yes |
 | `location` | default azure region and can be used if location is not specified inside the object | string | yes |
-| `resourcegroup` | default resource group and can be used if resourcegroup is not specified inside the object | string | yes |
+| `resource_group` | default resource group and can be used if resourcegroup is not specified inside the object | string | yes |
 | `naming` | used for naming purposes | string | yes |
 
 ## Outputs
@@ -67,6 +65,7 @@ A last key goal is to separate logic from configuration in the module, thereby e
 | `container_app_environment` | contains all container app environment config |
 | `container_app_custom_domain` | contains all container app custom domains config |
 | `container_apps` | contains all container apps config |
+| `container_app_jobs` | contains all container app jobs config |
 | `user_assigned_identities` | contains all container apps config |
 
 ## Testing

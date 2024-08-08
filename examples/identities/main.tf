@@ -61,14 +61,14 @@ module "acr" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 0.1"
+  version = "~> 1.0"
 
   naming = local.naming
 
   environment = {
-    name          = module.naming.container_app_environment.name
-    location      = module.rg.groups.demo.location
-    resourcegroup = module.rg.groups.demo.name
+    name           = module.naming.container_app_environment.name
+    location       = module.rg.groups.demo.location
+    resource_group = module.rg.groups.demo.name
 
     container_apps = {
       ## No identities used, only username/pw combination for registry with secret as value
