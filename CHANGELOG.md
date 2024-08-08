@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.4.0...v1.0.0) (2024-08-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* replaced azapi resources for container app jobs with native azurerm_container_app_job native resource
+
+### Features
+
+* update jobs to native azurerm resources ([#27](https://github.com/CloudNationHQ/terraform-azure-ca/issues/27)) ([03f344b](https://github.com/CloudNationHQ/terraform-azure-ca/commit/03f344b5bd2f0c457ecc0b7db7ac01bfe757c4b3))
+
 ## [0.4.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.3.0...v0.4.0) (2024-08-05)
 
 
