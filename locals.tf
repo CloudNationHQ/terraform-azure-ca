@@ -21,7 +21,7 @@ locals {
   user_assigned_identity_registry = flatten([for ca_key, ca in lookup(var.environment, "container_apps", {}) :
     {
       ca_name        = ca_key
-      scope          = try(ca.registry.scope, null)
+      scope          = ca.registry.scope
       server         = ca.registry.server
       principal_id   = try(ca.registry.identity.principal_id, null)
       identity_id    = lookup(lookup(ca.registry, "identity", {}), "id", {})
@@ -33,7 +33,7 @@ locals {
       # SystemAssigned MI not recommended due to chicken-egg problem:
       # CA can't be deployed without image, image can't be pulled without identity, identity can't be created without CA
     }
-  if contains(keys(ca.registry), "username") == false])
+  if contains(keys(lookup(ca, "registry", {})), "scope")])
 
   ## Multiple user assigned identities with the same name are implicitly generated when multiple secrets are defined
   ## To avoid this, we create a list of unique identity names and then create a map of identity objects
@@ -78,7 +78,7 @@ locals {
     [for job_key, job in lookup(var.environment, "jobs", {}) :
       {
         job_name       = job_key
-        scope          = try(job.registry.scope, null)
+        scope          = job.registry.scope
         server         = job.registry.server
         principal_id   = try(job.registry.identity.principal_id, null)
         identity_id    = lookup(lookup(job.registry, "identity", {}), "id", {})
@@ -88,7 +88,7 @@ locals {
         tags           = try(job.registry.identity.tags, {})
         type           = try(job.registry.identity.type, "UserAssigned")
       }
-  if contains(keys(job.registry), "username") == false])
+  if contains(keys(lookup(job, "registry", {})), "scope")])
 
   ## Multiple user assigned identities with the same name are implicitly generated when multiple secrets are defined
   ## To avoid this, we create a list of unique identity names and then create a map of identity objects

@@ -182,5 +182,25 @@ locals {
         }
       }
     }
+    job5 = {
+      kv_scope                   = module.kv.vault.id
+      replica_timeout_in_seconds = 300
+      template = {
+        container = {
+          name  = "container5"
+          image = "nginx:latest"
+          env = {
+            ALLOWED_HOSTS = {
+              value = "*"
+            }
+          }
+        }
+      }
+
+      manual_trigger_config = {
+        parallelism              = 4
+        replica_completion_count = 2
+      }
+    }
   }
 }

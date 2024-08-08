@@ -277,16 +277,13 @@ resource "azurerm_container_app" "ca" {
     for_each = try(each.value.registry, null) != null ? { default = each.value.registry } : {}
     content {
       server = registry.value.server
-      identity = try(registry.value.username, null) == null ? try(registry.value.identity.id,
+      identity = try(registry.value.scope, null) != null ? try(registry.value.identity.id,
       azurerm_user_assigned_identity.identity[try(registry.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id, ) : null
       username             = try(registry.value.username, null)
       password_secret_name = try(registry.value.password_secret_name, null)
     }
   }
 
-  ## Secrets should be set correctly, otherwise the secret should be removed from the container app from within the portal:
-  ## Cannot remove secrets from Container Apps at this time due to a limitation in the Container Apps Service.
-  ## Please see `https://github.com/microsoft/azure-container-apps/issues/395` for more details
   dynamic "secret" {
     for_each = { for key, sec in lookup(each.value, "secrets", {}) : key => sec }
     content {

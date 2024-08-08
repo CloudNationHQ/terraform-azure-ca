@@ -156,7 +156,7 @@ resource "azurerm_container_app_job" "job" {
     for_each = try(each.value.registry, null) != null ? { default = each.value.registry } : {}
     content {
       server = registry.value.server
-      identity = try(registry.value.username, null) == null ? try(registry.value.identity.id,
+      identity = try(registry.value.scope, null) != null ? try(registry.value.identity.id,
       azurerm_user_assigned_identity.identity_jobs[try(registry.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id, ) : null
       username             = try(registry.value.username, null)
       password_secret_name = try(registry.value.password_secret_name, null)
