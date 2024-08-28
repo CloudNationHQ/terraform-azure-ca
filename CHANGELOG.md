@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v1.0.0...v1.1.0) (2024-08-28)
+
+
+### Features
+
+* update documentation ([#30](https://github.com/CloudNationHQ/terraform-azure-ca/issues/30)) ([15cffdb](https://github.com/CloudNationHQ/terraform-azure-ca/commit/15cffdb7229e31ac1911019ca323d85e4a5110e7))
+
 ## [1.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v0.4.0...v1.0.0) (2024-08-08)
 
 
