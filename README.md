@@ -72,9 +72,9 @@ End-to-end testing is not conducted on these modules, as they are individual com
 
 | Name | Description |
 | :-- | :-- |
-| `container_app_environment_certificate` | contains all container apps config |
-| `container_app_environment` | contains all container app environment config |
-| `container_app_custom_domain` | contains all container app custom domains config |
+| `certificates` | contains all container app environment certificate(s) configuration |
+| `environment` | contains all container app environment configuration |
+| `custom_domains` | contains all container app custom domain(s) configuration |
 | `container_apps` | contains all container apps config |
 | `container_app_jobs` | contains all container app jobs config |
 | `user_assigned_identities` | contains all container apps config |
