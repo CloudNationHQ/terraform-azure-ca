@@ -7,12 +7,12 @@ module "naming" {
 
 module "rg" {
   source  = "cloudnationhq/rg/azure"
-  version = "~> 0.1"
+  version = "~> 2.0"
 
   groups = {
     demo = {
-      name   = module.naming.resource_group.name
-      region = "westeurope"
+      name     = module.naming.resource_group.name
+      location = "westeurope"
     }
   }
 }
@@ -55,7 +55,7 @@ module "acr" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   naming = local.naming
 
