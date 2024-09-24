@@ -9,7 +9,7 @@
 
 ### Features
 
-* upgrade azurerm provder to v4 ([#33](https://github.com/CloudNationHQ/terraform-azure-ca/issues/33)) ([bfdbb44](https://github.com/CloudNationHQ/terraform-azure-ca/commit/bfdbb444dae770afee7669facde976a35b02d1bb))
+* upgrade azurerm provider to v4 ([#33](https://github.com/CloudNationHQ/terraform-azure-ca/issues/33)) ([bfdbb44](https://github.com/CloudNationHQ/terraform-azure-ca/commit/bfdbb444dae770afee7669facde976a35b02d1bb))
 
 ### Upgrade from v1.1.0 to v2.0.0:
 
