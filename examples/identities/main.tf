@@ -24,8 +24,8 @@ module "kv" {
   naming = local.naming
 
   vault = {
-    name          = module.naming.key_vault.name_unique
-    location      = module.rg.groups.demo.location
+    name           = module.naming.key_vault.name_unique
+    location       = module.rg.groups.demo.location
     resource_group = module.rg.groups.demo.name
 
     secrets = {
@@ -52,7 +52,7 @@ module "acr" {
   registry = {
     name                          = module.naming.container_registry.name_unique
     location                      = module.rg.groups.demo.location
-    resource_group                 = module.rg.groups.demo.name
+    resource_group                = module.rg.groups.demo.name
     sku                           = "Premium"
     public_network_access_enabled = true
     admin_enabled                 = true
