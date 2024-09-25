@@ -42,8 +42,8 @@ locals {
       }
 
       registry = {
-        server = module.acr.acr.login_server
-        scope  = module.acr.acr.id
+        server = module.acr.registry.login_server
+        scope  = module.acr.registry.id
       }
 
     }
@@ -81,8 +81,8 @@ locals {
       }
 
       registry = {
-        server = module.acr.acr.login_server
-        scope  = module.acr.acr.id
+        server = module.acr.registry.login_server
+        scope  = module.acr.registry.id
         identity = {
           name = "uai-job2-registry"
         }
@@ -127,13 +127,13 @@ locals {
           value = "secret-string"
         }
         secret-key = {
-          value = module.acr.acr.admin_password
+          value = module.acr.registry.admin_password
         }
       }
 
       registry = {
-        server               = module.acr.acr.login_server
-        username             = module.acr.acr.admin_username
+        server               = module.acr.registry.login_server
+        username             = module.acr.registry.admin_username
         password_secret_name = "secret-key"
       }
 
@@ -173,8 +173,8 @@ locals {
       }
 
       registry = {
-        server = module.acr.acr.login_server
-        scope  = module.acr.acr.id
+        server = module.acr.registry.login_server
+        scope  = module.acr.registry.id
         identity = {
           name         = azurerm_user_assigned_identity.identity_reg.name
           id           = azurerm_user_assigned_identity.identity_reg.id

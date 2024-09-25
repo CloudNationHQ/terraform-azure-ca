@@ -20,3 +20,9 @@ variable "resource_group" {
   type        = string
   default     = null
 }
+
+variable "tags" {
+  description = "default tags and can be used if tags are not specified inside the object."
+  type        = map(string)
+  default     = {}
+}

@@ -17,7 +17,7 @@ resource "azurerm_container_app_environment" "cae" {
       minimum_count         = workload_profile.value.minimum_count
     }
   }
-  tags = try(var.environment.tags, {})
+  tags = try(var.environment.tags, var.tags)
 }
 
 resource "azurerm_container_app" "ca" {
@@ -306,7 +306,7 @@ resource "azurerm_container_app" "ca" {
       [for id in identity.value : id.identity_id if id.identity_id != {} && id.ca_name == each.key])
     }
   }
-  tags = try(each.value.tags, {})
+  tags = try(each.value.tags, var.tags)
 
   depends_on = [azurerm_role_assignment.role_secret_user, azurerm_role_assignment.role_acr_pull]
 }
@@ -335,7 +335,7 @@ resource "azurerm_user_assigned_identity" "identity" {
   name                = each.key
   resource_group_name = try(each.value.resource_group, var.resource_group)
   location            = try(each.value.location, var.location)
-  tags                = try(each.value.tags, var.environment.tags, null)
+  tags                = try(each.value.tags, var.environment.tags, var.tags)
 }
 
 resource "azurerm_role_assignment" "role_secret_user" {
@@ -593,7 +593,7 @@ resource "azurerm_container_app_job" "job" {
     }
   }
 
-  tags = try(each.value.tags, {})
+  tags = try(each.value.tags, var.tags)
 }
 
 resource "azurerm_user_assigned_identity" "identity_jobs" {
@@ -602,7 +602,7 @@ resource "azurerm_user_assigned_identity" "identity_jobs" {
   name                = each.key
   resource_group_name = try(each.value.resource_group, var.resource_group)
   location            = try(each.value.location, var.location)
-  tags                = try(each.value.tags, var.environment.tags, null)
+  tags                = try(each.value.tags, var.environment.tags, var.tags)
 }
 
 resource "azurerm_role_assignment" "role_secret_user_jobs" {
