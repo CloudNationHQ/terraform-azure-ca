@@ -19,14 +19,14 @@ module "rg" {
 
 module "kv" {
   source  = "cloudnationhq/kv/azure"
-  version = "~> 0.2"
+  version = "~> 2.0"
 
   naming = local.naming
 
   vault = {
     name          = module.naming.key_vault.name_unique
     location      = module.rg.groups.demo.location
-    resourcegroup = module.rg.groups.demo.name
+    resource_group = module.rg.groups.demo.name
 
     secrets = {
       random_string = {
@@ -41,12 +41,12 @@ module "kv" {
 
 module "acr" {
   source  = "cloudnationhq/acr/azure"
-  version = "~> 1.0"
+  version = "~> 3.0"
 
   registry = {
     name                          = module.naming.container_registry.name_unique
     location                      = module.rg.groups.demo.location
-    resourcegroup                 = module.rg.groups.demo.name
+    resource_group                 = module.rg.groups.demo.name
     sku                           = "Premium"
     public_network_access_enabled = true
     admin_enabled                 = true

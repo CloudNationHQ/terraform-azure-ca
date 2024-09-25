@@ -67,6 +67,7 @@ End-to-end testing is not conducted on these modules, as they are individual com
 | `location` | default azure region and can be used if location is not specified inside the object | string | yes |
 | `resource_group` | default resource group and can be used if resourcegroup is not specified inside the object | string | yes |
 | `naming` | used for naming purposes | string | yes |
+| `tags` | tags to be added to the resources | map(string) | no |
 
 ## Outputs
 

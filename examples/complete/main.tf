@@ -19,14 +19,14 @@ module "rg" {
 
 module "kv" {
   source  = "cloudnationhq/kv/azure"
-  version = "~> 0.2"
+  version = "~> 2.0"
 
   naming = local.naming
 
   vault = {
     name          = module.naming.key_vault.name_unique
     location      = module.rg.groups.demo.location
-    resourcegroup = module.rg.groups.demo.name
+    resource_group = module.rg.groups.demo.name
 
     secrets = {
       random_string = {
@@ -72,25 +72,25 @@ module "vnet" {
 
 module "law" {
   source  = "cloudnationhq/law/azure"
-  version = "~> 0.1"
+  version = "~> 2.0"
 
-  law = {
+  workspace = {
     name          = module.naming.log_analytics_workspace.name
     location      = module.rg.groups.demo.location
-    resourcegroup = module.rg.groups.demo.name
+    resource_group = module.rg.groups.demo.name
   }
 }
 
 module "acr" {
   source  = "cloudnationhq/acr/azure"
-  version = "~> 1.0"
+  version = "~> 3.0"
 
   naming = local.naming
 
   registry = {
     name                          = module.naming.container_registry.name_unique
     location                      = module.rg.groups.demo.location
-    resourcegroup                 = module.rg.groups.demo.name
+    resource_group                 = module.rg.groups.demo.name
     sku                           = "Premium"
     public_network_access_enabled = true
     admin_enabled                 = true
@@ -156,7 +156,7 @@ module "ca" {
 
         secrets = {
           secret-key = {
-            value = module.acr.acr.admin_password
+            value = module.acr.registry.admin_password
           }
         }
 
@@ -173,8 +173,8 @@ module "ca" {
         }
 
         registry = {
-          server               = module.acr.acr.login_server
-          username             = module.acr.acr.admin_username
+          server               = module.acr.registry.login_server
+          username             = module.acr.registry.admin_username
           password_secret_name = "secret-key"
         }
       }
@@ -231,8 +231,8 @@ module "ca" {
         }
 
         registry = {
-          server = module.acr.acr.login_server
-          scope  = module.acr.acr.id
+          server = module.acr.registry.login_server
+          scope  = module.acr.registry.id
         }
       }
     }
