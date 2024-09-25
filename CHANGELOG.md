@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.0...v2.0.1) (2024-09-25)
+
+
+### Bug Fixes
+
+* global tags and examples update ([#35](https://github.com/CloudNationHQ/terraform-azure-ca/issues/35)) ([eaacb43](https://github.com/CloudNationHQ/terraform-azure-ca/commit/eaacb435b30baae893dd51fb108f6fc1a0bb482b))
+
 ## [2.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v1.1.0...v2.0.0) (2024-09-24)
 
 
