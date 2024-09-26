@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.1...v2.0.2) (2024-09-26)
+
+
+### Bug Fixes
+
+* add dependson on container app jobs regarding acr pull role assignments ([#37](https://github.com/CloudNationHQ/terraform-azure-ca/issues/37)) ([aa38462](https://github.com/CloudNationHQ/terraform-azure-ca/commit/aa3846259b4e40d98c6e58be5331f77cc17f64ec))
+
 ## [2.0.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.0...v2.0.1) (2024-09-25)
 
 
