@@ -594,6 +594,10 @@ resource "azurerm_container_app_job" "job" {
   }
 
   tags = try(each.value.tags, var.tags)
+
+  depends_on = [
+    azurerm_role_assignment.role_acr_pull_jobs
+  ]
 }
 
 resource "azurerm_user_assigned_identity" "identity_jobs" {
