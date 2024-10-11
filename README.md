@@ -88,19 +88,21 @@ End-to-end testing is not conducted on these modules, as they are individual com
 
 ## Testing
 
-As a prerequirement, please ensure that both go and terraform are properly installed on your system.
+Ensure go and terraform are installed.
 
-The [Makefile](Makefile) includes two distinct variations of tests. The first one is designed to deploy different usage scenarios of the module. These tests are executed by specifying the TF_PATH environment variable, which determines the different usages located in the example directory.
+Run tests for different usage scenarios by specifying the EXAMPLE environment variable. Usage examples are in the examples directory.
 
-To execute this test, input the command ```make test TF_PATH=default```, substituting default with the specific usage you wish to test.
+To execute a test, run `make test EXAMPLE=default`
 
-The second variation is known as a extended test. This one performs additional checks and can be executed without specifying any parameters, using the command ```make test_extended```.
-
-Both are designed to be executed locally and are also integrated into the github workflow.
-
-Each of these tests contributes to the robustness and resilience of the module. They ensure the module performs consistently and accurately under different scenarios and configurations.
+Replace default with the specific example you want to test. These tests ensure the module performs reliably across various configurations.
 
 ## Notes
+
+Using a dedicated module, we've developed a naming convention for resources that's based on specific regular expressions for each type, ensuring correct abbreviations and offering flexibility with multiple prefixes and suffixes.
+
+Full examples detailing all usages, along with integrations with dependency modules, are located in the examples directory.
+
+To update the module's documentation run `make doc`
 
 **Recommended Identity for Image Retrieval from Azure Container Registry (ACR):**
 While it's technically possible to use a system-assigned identity for pulling images from an Azure Container Registry (ACR), we strongly recommend using user-assigned identities. Here's why:
@@ -116,8 +118,6 @@ By using a user-assigned identity, this issue can be avoided. The deployment ord
 
 This way, the module ensures that all the necessary permissions are in place before the container app deployment. It is a smoother, first time right deployment and more reliable process that we strongly recommend for most use cases.
 See also [here](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity?tabs=portal%2Cdotnet#common-use-cases)
-
-Full examples detailing all usages, along with integrations with dependency modules, are located in the examples directory
 
 ## Authors
 
