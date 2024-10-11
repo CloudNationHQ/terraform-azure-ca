@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.2...v2.1.0) (2024-10-11)
+
+
+### Features
+
+* auto generated docs and refine makefile ([#39](https://github.com/CloudNationHQ/terraform-azure-ca/issues/39)) ([0f4a5d5](https://github.com/CloudNationHQ/terraform-azure-ca/commit/0f4a5d5e3cee71396e049d658977ad99f211c58c))
+* **deps:** bump github.com/gruntwork-io/terratest in /tests ([#40](https://github.com/CloudNationHQ/terraform-azure-ca/issues/40)) ([85802b7](https://github.com/CloudNationHQ/terraform-azure-ca/commit/85802b7fd99f16f8e9c45287176f833ce4a27f2d))
+
 ## [2.0.2](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.1...v2.0.2) (2024-09-26)
 
 
