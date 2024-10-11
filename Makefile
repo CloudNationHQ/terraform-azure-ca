@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 .PHONY: test docs fmt validate install-tools
+=======
+.PHONY: test docs
+>>>>>>> abb9da169cb2cbfa7397d824aa33f7e8c0ac7b45
 
 export EXAMPLE
 
@@ -8,6 +12,7 @@ install-tools:
 	@go install github.com/terraform-docs/terraform-docs@latest
 
 test:
+<<<<<<< HEAD
 	cd tests && go test -v -timeout 60m -run TestApplyNoError/$(EXAMPLE) ./deploy_test.go
 
 docs:
@@ -32,3 +37,9 @@ validate:
 	@rm -f terraform.tfstate
 	@rm -f terraform.tfstate.backup
 	@rm -f .terraform.lock.hcl
+=======
+	cd tests && go test -v -timeout 60m -run TestApplyNoError/$(EXAMPLE) ./ca_test.go
+
+docs:
+	@terraform-docs markdown table --output-file README.md --output-mode inject .
+>>>>>>> abb9da169cb2cbfa7397d824aa33f7e8c0ac7b45

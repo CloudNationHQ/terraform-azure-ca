@@ -47,6 +47,13 @@ End-to-end testing is not conducted on these modules, as they are individual com
 | Name | Version |
 |------|---------|
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.0 |
+<<<<<<< HEAD
+=======
+
+## Modules
+
+No modules.
+>>>>>>> abb9da169cb2cbfa7397d824aa33f7e8c0ac7b45
 
 ## Resources
 
