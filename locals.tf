@@ -109,17 +109,16 @@ locals {
 
   custom_domain_certificates = flatten(
     [for ca_key, ca in lookup(var.environment, "container_apps", {}) :
-      [for cert_key, cert in lookup(ca, "certificates", {}) :
-        [for uai_key, uai in lookup(ca, "identities", {}) : {
-          key                   = "${ca_key}-${cert_key}"
-          ca_name               = ca_key
-          fqdn                  = try(cert.fqdn, null)
-          binding_type          = try(cert.binding_type, null)
-          name                  = try(cert.name, null)
-          path                  = try(cert.path, null)
-          password              = try(cert.password, "")
-          key_vault_certificate = try(cert.key_vault_certificate, null)
-          }
-    ]]]
+      [for cert_key, cert in lookup(ca, "certificates", {}) : {
+        key                   = "${ca_key}-${cert_key}"
+        ca_name               = ca_key
+        fqdn                  = try(cert.fqdn, null)
+        binding_type          = try(cert.binding_type, null)
+        name                  = try(cert.name, null)
+        path                  = try(cert.path, null)
+        password              = try(cert.password, "")
+        key_vault_certificate = try(cert.key_vault_certificate, null)
+        }
+    ]]
   )
 }
