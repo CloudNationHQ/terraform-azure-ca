@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.1.0...v2.1.1) (2024-10-31)
+
+
+### Bug Fixes
+
+* rm domain certificate unused uai ([#42](https://github.com/CloudNationHQ/terraform-azure-ca/issues/42)) ([4184dcf](https://github.com/CloudNationHQ/terraform-azure-ca/commit/4184dcfef4d651200926adaf9bbdc2b9028cbc67))
+
 ## [2.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.0.2...v2.1.0) (2024-10-11)
 
 

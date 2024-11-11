@@ -30,6 +30,7 @@ resource "azurerm_container_app" "ca" {
   resource_group_name          = coalesce(lookup(each.value, "resource_group", null), var.environment.resource_group)
   revision_mode                = try(each.value.revision_mode, "Single")
   workload_profile_name        = try(each.value.workload_profile_name, null)
+  max_inactive_revisions       = try(each.value.max_inactive_revisions, null)
 
   template {
     min_replicas    = try(each.value.template.min_replicas, 1)
