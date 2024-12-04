@@ -2,7 +2,7 @@ module "naming" {
   source  = "cloudnationhq/naming/azure"
   version = "~> 0.1"
 
-  suffix = ["demo", "dev"]
+  suffix = ["demo", "dev", "jp"]
 }
 
 module "rg" {
@@ -55,7 +55,7 @@ module "acr" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   naming = local.naming
 
