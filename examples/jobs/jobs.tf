@@ -28,8 +28,10 @@ locals {
               targetWorkflowQueueLength = "1"
             }
             authentication = {
-              secret_name       = "personal-access-token"
-              trigger_parameter = "personalAccessToken"
+              auth1 = {
+                secret_name       = "personal-access-token"
+                trigger_parameter = "personalAccessToken"
+              }
             }
           }
         }
@@ -115,8 +117,14 @@ locals {
               targetWorkflowQueueLength = "1"
             }
             authentication = {
-              secret_name       = "personal-access-token"
-              trigger_parameter = "personalAccessToken"
+              auth1 = {
+                secret_name       = "personal-access-token"
+                trigger_parameter = "personalAccessToken"
+              }
+              auth2 = {
+                secret_name       = "secret-key"
+                trigger_parameter = "superSecretTrigger"
+              }
             }
           }
         }
