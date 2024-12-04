@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.1.1...v3.0.0) (2024-12-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* support multiple authentication blocks in jobs ([#47](https://github.com/CloudNationHQ/terraform-azure-ca/issues/47))
+
+### Features
+
+* support multiple authentication blocks in jobs ([#47](https://github.com/CloudNationHQ/terraform-azure-ca/issues/47)) ([ac57e78](https://github.com/CloudNationHQ/terraform-azure-ca/commit/ac57e78538e9ae63f40e76a4f44123c39509b702))
+
 ## [2.1.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v2.1.0...v2.1.1) (2024-10-31)
 
 
