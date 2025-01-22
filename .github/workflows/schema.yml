@@ -6,7 +6,7 @@ on:
 
 jobs:
   schema-check:
-    uses: cloudnationhq/terraform-azure-workflows/.github/workflows/schema.yml@main
+    uses: cloudnationhq/terraform-azure-workflows/.github/workflows/schema-validation.yml@main
     with:
-      repository: ${{ github.repository }}
+      target-repo: ${{ github.repository }}
     secrets: inherit
