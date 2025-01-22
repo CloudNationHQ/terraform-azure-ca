@@ -1,4 +1,5 @@
 resource "azurerm_container_app_environment" "cae" {
+
   name                               = var.environment.name
   location                           = try(var.environment.location, var.location)
   resource_group_name                = coalesce(lookup(var.environment, "resource_group", null), var.resource_group)
