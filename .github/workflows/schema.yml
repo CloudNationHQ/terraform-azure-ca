@@ -1,0 +1,12 @@
+name: Weekly Schema Check
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Every Monday at 00:00
+  workflow_dispatch:
+
+jobs:
+  schema-check:
+    uses: cloudnationhq/terraform-azure-workflows/.github/workflows/schema.yml@main
+    with:
+      repository: ${{ github.repository }}
+    secrets: inherit
