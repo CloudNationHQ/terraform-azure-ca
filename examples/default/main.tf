@@ -47,10 +47,6 @@ module "ca" {
             }
           }
         }
-
-        registry = {
-          server = "docker.io"
-        }
       }
     }
   }
