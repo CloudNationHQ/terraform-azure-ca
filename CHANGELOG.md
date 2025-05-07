@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v3.1.0...v3.2.0) (2025-05-07)
+
+
+### Features
+
+* **deps:** bump github.com/gruntwork-io/terratest in /tests ([#59](https://github.com/CloudNationHQ/terraform-azure-ca/issues/59)) ([43d0f4a](https://github.com/CloudNationHQ/terraform-azure-ca/commit/43d0f4a32496eb777c5397b69ceb859ff1a80c25))
+* **deps:** bump golang.org/x/crypto from 0.31.0 to 0.35.0 in /tests ([#66](https://github.com/CloudNationHQ/terraform-azure-ca/issues/66)) ([5fb32a9](https://github.com/CloudNationHQ/terraform-azure-ca/commit/5fb32a9c83727eba0bc35d2861b0cafe7401cc46))
+* **deps:** bump golang.org/x/net from 0.33.0 to 0.38.0 in /tests ([#67](https://github.com/CloudNationHQ/terraform-azure-ca/issues/67)) ([9dabf6d](https://github.com/CloudNationHQ/terraform-azure-ca/commit/9dabf6d845b6a5e9cb0e66b0ee11938bcc740221))
+* schema validation items for ca ([#68](https://github.com/CloudNationHQ/terraform-azure-ca/issues/68)) ([8cc28aa](https://github.com/CloudNationHQ/terraform-azure-ca/commit/8cc28aaa890f9d8d55a1c810c7d9203ef2669da4))
+
 ## [3.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v3.0.0...v3.1.0) (2025-01-20)
 
 
