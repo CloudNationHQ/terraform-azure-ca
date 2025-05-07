@@ -1,12 +1,15 @@
 resource "azurerm_container_app_environment" "cae" {
-  name                               = var.environment.name
-  location                           = try(var.environment.location, var.location)
-  resource_group_name                = coalesce(lookup(var.environment, "resource_group", null), var.resource_group)
-  infrastructure_subnet_id           = try(var.environment.infrastructure_subnet_id, null)
-  infrastructure_resource_group_name = try(var.environment.infrastructure_resource_group_name, null)
-  internal_load_balancer_enabled     = try(var.environment.internal_load_balancer_enabled, null)
-  zone_redundancy_enabled            = try(var.environment.zone_redundancy_enabled, null)
-  log_analytics_workspace_id         = try(var.environment.log_analytics_workspace_id, null)
+  name                                        = var.environment.name
+  location                                    = try(var.environment.location, var.location)
+  resource_group_name                         = coalesce(lookup(var.environment, "resource_group", null), var.resource_group)
+  dapr_application_insights_connection_string = try(var.environment.dapr_application_insights_connection_string, null)
+  infrastructure_subnet_id                    = try(var.environment.infrastructure_subnet_id, null)
+  infrastructure_resource_group_name          = try(var.environment.infrastructure_resource_group_name, null)
+  internal_load_balancer_enabled              = try(var.environment.internal_load_balancer_enabled, null)
+  zone_redundancy_enabled                     = try(var.environment.zone_redundancy_enabled, null)
+  log_analytics_workspace_id                  = try(var.environment.log_analytics_workspace_id, null)
+  logs_destination                            = try(var.environment.logs_destination, null)
+  mutual_tls_enabled                          = try(var.environment.mutual_tls_enabled, false)
 
   dynamic "workload_profile" {
     for_each = try(var.environment.workload_profile, {})
@@ -33,9 +36,10 @@ resource "azurerm_container_app" "ca" {
   max_inactive_revisions       = try(each.value.max_inactive_revisions, null)
 
   template {
-    min_replicas    = try(each.value.template.min_replicas, 1)
-    max_replicas    = try(each.value.template.max_replicas, 1)
-    revision_suffix = try(each.value.template.revision_suffix, null)
+    min_replicas                     = try(each.value.template.min_replicas, 1)
+    max_replicas                     = try(each.value.template.max_replicas, 1)
+    revision_suffix                  = try(each.value.template.revision_suffix, null)
+    termination_grace_period_seconds = try(each.value.template.termination_grace_period_seconds, null)
 
     dynamic "init_container" {
       for_each = try(each.value.template.init_container, null) != null ? { default = each.value.template.init_container } : {}
@@ -59,8 +63,9 @@ resource "azurerm_container_app" "ca" {
         dynamic "volume_mounts" {
           for_each = try(init_container.value.volume_mounts, null) != null ? { default = init_container.value.volume_mounts } : {}
           content {
-            name = volume_mounts.value.name
-            path = volume_mounts.value.path
+            name     = volume_mounts.value.name
+            path     = volume_mounts.value.path
+            sub_path = try(volume_mounts.value.sub_path, null)
           }
         }
       }
@@ -88,8 +93,9 @@ resource "azurerm_container_app" "ca" {
         dynamic "volume_mounts" {
           for_each = try(container.value.volume_mounts, null) != null ? { default = container.value.volume_mounts } : {}
           content {
-            name = volume_mounts.value.name
-            path = volume_mounts.value.path
+            name     = volume_mounts.value.name
+            path     = volume_mounts.value.path
+            sub_path = try(volume_mounts.value.sub_path, null)
           }
         }
 
@@ -122,6 +128,7 @@ resource "azurerm_container_app" "ca" {
             transport               = try(readiness_probe.value.transport, "HTTPS")
             port                    = readiness_probe.value.port
             host                    = try(readiness_probe.value.host, null)
+            initial_delay           = try(readiness_probe.value.initial_delay, 0)
             failure_count_threshold = try(readiness_probe.value.failure_count_threshold, 3)
             success_count_threshold = try(readiness_probe.value.termination_grace_period_seconds, 3)
             interval_seconds        = try(readiness_probe.value.interval_seconds, 10)
@@ -231,9 +238,10 @@ resource "azurerm_container_app" "ca" {
     dynamic "volume" {
       for_each = try(each.value.volume, null) != null ? { default = each.value.volume } : {}
       content {
-        name         = volume.value.name
-        storage_name = try(volume.value.storage_name, null)
-        storage_type = try(volume.value.storage_type, null)
+        name          = volume.value.name
+        storage_name  = try(volume.value.storage_name, null)
+        storage_type  = try(volume.value.storage_type, null)
+        mount_options = try(volume.value.mount_options, null)
       }
     }
   }
@@ -248,6 +256,7 @@ resource "azurerm_container_app" "ca" {
       target_port                = ingress.value.target_port
       exposed_port               = try(ingress.value.transport, null) == "tcp" ? ingress.value.exposed_port : null
       transport                  = try(ingress.value.transport, "auto")
+      client_certificate_mode    = try(ingress.value.client_certificate_mode, null)
 
 
       dynamic "traffic_weight" {
@@ -271,6 +280,15 @@ resource "azurerm_container_app" "ca" {
           ip_address_range = ip_security_restriction.value.ip_address_range
         }
       }
+    }
+  }
+
+  dynamic "dapr" {
+    for_each = try(each.value.dapr, null) != null ? { default = each.value.dapr } : {}
+    content {
+      app_id       = dapr.value.app_id
+      app_port     = try(dapr.value.app_port, null)
+      app_protocol = try(dapr.value.app_protocol, "http")
     }
   }
 
@@ -319,6 +337,8 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
   container_app_environment_id = azurerm_container_app_environment.cae.id
   certificate_blob_base64      = try(each.value.key_vault_certificate, filebase64(each.value.path))
   certificate_password         = each.value.password
+
+  tags = try(var.environment.tags, var.tags)
 }
 
 resource "azurerm_container_app_custom_domain" "domain" {
@@ -342,17 +362,27 @@ resource "azurerm_user_assigned_identity" "identity" {
 resource "azurerm_role_assignment" "role_secret_user" {
   for_each = { for id in local.unique_uai_secrets_map : id.id_name => id }
 
-  scope                = each.value.kv_scope
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
+  scope                                  = each.value.kv_scope
+  role_definition_name                   = "Key Vault Secrets User"
+  principal_id                           = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
+  principal_type                         = try(each.value.principal_type, "ServicePrincipal")
+  description                            = "Grants Key Vault Secrets User role to User Assigned Managed Identity"
+  condition                              = try(each.value.condition, null)
+  condition_version                      = try(each.value.condition_version, null)
+  delegated_managed_identity_resource_id = try(each.value.delegated_managed_identity_resource_id, null)
 }
 
 resource "azurerm_role_assignment" "role_acr_pull" {
   for_each = { for id in local.user_assigned_identity_registry : id.id_name => id }
 
-  scope                = each.value.scope
-  role_definition_name = "AcrPull"
-  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
+  scope                                  = each.value.scope
+  role_definition_name                   = "AcrPull"
+  principal_id                           = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
+  principal_type                         = try(each.value.principal_type, "ServicePrincipal")
+  description                            = "Grants AcrPull role to User Assigned Managed Identity"
+  condition                              = try(each.value.condition, null)
+  condition_version                      = try(each.value.condition_version, null)
+  delegated_managed_identity_resource_id = try(each.value.delegated_managed_identity_resource_id, null)
 }
 
 resource "azurerm_container_app_job" "job" {
@@ -394,8 +424,9 @@ resource "azurerm_container_app_job" "job" {
         dynamic "volume_mounts" {
           for_each = try(init_container.value.volume_mounts, null) != null ? { default = init_container.value.volume_mounts } : {}
           content {
-            name = volume_mounts.value.name
-            path = volume_mounts.value.path
+            name     = volume_mounts.value.name
+            path     = volume_mounts.value.path
+            sub_path = try(volume_mounts.value.sub_path, null)
           }
         }
       }
@@ -425,8 +456,9 @@ resource "azurerm_container_app_job" "job" {
         dynamic "volume_mounts" {
           for_each = try(container.value.volume_mounts, null) != null ? { default = container.value.volume_mounts } : {}
           content {
-            name = volume_mounts.value.name
-            path = volume_mounts.value.path
+            name     = volume_mounts.value.name
+            path     = volume_mounts.value.path
+            sub_path = try(volume_mounts.value.sub_path, null)
           }
         }
 
@@ -459,6 +491,7 @@ resource "azurerm_container_app_job" "job" {
             transport               = try(readiness_probe.value.transport, "HTTPS")
             port                    = readiness_probe.value.port
             host                    = try(readiness_probe.value.host, null)
+            initial_delay           = try(readiness_probe.value.initial_delay, 0)
             failure_count_threshold = try(readiness_probe.value.failure_count_threshold, 3)
             success_count_threshold = try(readiness_probe.value.termination_grace_period_seconds, 3)
             interval_seconds        = try(readiness_probe.value.interval_seconds, 10)
@@ -481,6 +514,7 @@ resource "azurerm_container_app_job" "job" {
             transport                        = try(startup_probe.value.transport, "HTTPS")
             port                             = startup_probe.value.port
             host                             = try(startup_probe.value.host, null)
+            initial_delay                    = try(startup_probe.value.initial_delay, 0)
             failure_count_threshold          = try(startup_probe.value.failure_count_threshold, 3)
             interval_seconds                 = try(startup_probe.value.interval_seconds, 10)
             path                             = try(startup_probe.value.path, "/")
@@ -502,9 +536,10 @@ resource "azurerm_container_app_job" "job" {
     dynamic "volume" {
       for_each = try(each.value.template.volume, null) != null ? { default = each.value.template.volume } : {}
       content {
-        name         = volume.value.name
-        storage_type = try(volume.value.storage_type, null)
-        storage_name = try(volume.value.storage_name, null)
+        name          = volume.value.name
+        storage_type  = try(volume.value.storage_type, null)
+        storage_name  = try(volume.value.storage_name, null)
+        mount_options = try(volume.value.mount_options, null)
       }
     }
   }
