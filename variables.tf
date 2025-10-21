@@ -351,10 +351,10 @@ variable "environment" {
             name             = optional(string)
             custom_rule_type = optional(string)
             metadata         = optional(map(string), {})
-            authentication = optional(map(object({
+            authentication = optional(object({
               trigger_parameter = string
               secret_name       = string
-            })), {})
+            }))
           }))
         }))
       }))
