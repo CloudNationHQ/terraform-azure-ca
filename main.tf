@@ -1,18 +1,35 @@
+data "azurerm_container_app_environment" "existing" {
+  for_each = var.environment.use_existing ? { "cae" = var.environment } : {}
+
+  name                = each.value.name
+  resource_group_name = coalesce(each.value.resource_group_name, var.resource_group_name)
+}
+
 resource "azurerm_container_app_environment" "cae" {
-  name                                        = var.environment.name
-  location                                    = try(var.environment.location, var.location)
-  resource_group_name                         = coalesce(lookup(var.environment, "resource_group", null), var.resource_group)
-  dapr_application_insights_connection_string = try(var.environment.dapr_application_insights_connection_string, null)
-  infrastructure_subnet_id                    = try(var.environment.infrastructure_subnet_id, null)
-  infrastructure_resource_group_name          = try(var.environment.infrastructure_resource_group_name, null)
-  internal_load_balancer_enabled              = try(var.environment.internal_load_balancer_enabled, null)
-  zone_redundancy_enabled                     = try(var.environment.zone_redundancy_enabled, null)
-  log_analytics_workspace_id                  = try(var.environment.log_analytics_workspace_id, null)
-  logs_destination                            = try(var.environment.logs_destination, null)
-  mutual_tls_enabled                          = try(var.environment.mutual_tls_enabled, false)
+  for_each = var.environment.use_existing ? {} : { "cae" = var.environment }
+
+  name                                        = each.value.name
+  location                                    = coalesce(each.value.location, var.location)
+  resource_group_name                         = coalesce(each.value.resource_group_name, var.resource_group_name)
+  dapr_application_insights_connection_string = each.value.dapr_application_insights_connection_string
+  infrastructure_subnet_id                    = each.value.infrastructure_subnet_id
+  infrastructure_resource_group_name          = each.value.infrastructure_resource_group_name
+  internal_load_balancer_enabled              = each.value.internal_load_balancer_enabled
+  zone_redundancy_enabled                     = each.value.zone_redundancy_enabled
+  log_analytics_workspace_id                  = each.value.log_analytics_workspace_id
+  logs_destination                            = each.value.logs_destination
+  mutual_tls_enabled                          = each.value.mutual_tls_enabled
+
+  dynamic "identity" {
+    for_each = each.value.identity != null ? { default = each.value.identity } : {}
+    content {
+      type         = identity.value.type
+      identity_ids = identity.value.identity_ids
+    }
+  }
 
   dynamic "workload_profile" {
-    for_each = try(var.environment.workload_profile, {})
+    for_each = each.value.workload_profile
     content {
       name                  = workload_profile.value.name
       workload_profile_type = workload_profile.value.workload_profile_type
@@ -20,7 +37,12 @@ resource "azurerm_container_app_environment" "cae" {
       minimum_count         = workload_profile.value.minimum_count
     }
   }
-  tags = try(var.environment.tags, var.tags)
+
+  tags = coalesce(each.value.tags, var.tags)
+}
+
+locals {
+  environment_id = var.environment.use_existing ? data.azurerm_container_app_environment.existing["cae"].id : azurerm_container_app_environment.cae["cae"].id
 }
 
 resource "azurerm_container_app" "ca" {
@@ -28,44 +50,44 @@ resource "azurerm_container_app" "ca" {
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : ca_key => ca
   }
 
-  name                         = try(each.value.name, "${var.naming.container_app}-${each.key}")
-  container_app_environment_id = azurerm_container_app_environment.cae.id
-  resource_group_name          = coalesce(lookup(each.value, "resource_group", null), var.environment.resource_group)
-  revision_mode                = try(each.value.revision_mode, "Single")
-  workload_profile_name        = try(each.value.workload_profile_name, null)
-  max_inactive_revisions       = try(each.value.max_inactive_revisions, null)
+  name                         = coalesce(each.value.name, try("${var.naming.container_app}-${each.key}", each.key))
+  container_app_environment_id = local.environment_id
+  resource_group_name          = coalesce(each.value.resource_group_name, var.environment.resource_group_name, var.resource_group_name)
+  revision_mode                = each.value.revision_mode
+  workload_profile_name        = each.value.workload_profile_name
+  max_inactive_revisions       = each.value.max_inactive_revisions
 
   template {
-    min_replicas                     = try(each.value.template.min_replicas, 1)
-    max_replicas                     = try(each.value.template.max_replicas, 1)
-    revision_suffix                  = try(each.value.template.revision_suffix, null)
-    termination_grace_period_seconds = try(each.value.template.termination_grace_period_seconds, null)
+    min_replicas                     = each.value.template.min_replicas
+    max_replicas                     = each.value.template.max_replicas
+    revision_suffix                  = each.value.template.revision_suffix
+    termination_grace_period_seconds = each.value.template.termination_grace_period_seconds
 
     dynamic "init_container" {
-      for_each = try(each.value.template.init_container, null) != null ? { default = each.value.template.init_container } : {}
+      for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}
       content {
         name    = init_container.value.name
         image   = init_container.value.image
-        cpu     = try(init_container.value.cpu, 0.25)
-        memory  = try(init_container.value.memory, "0.5Gi")
-        command = try(init_container.value.command, [])
-        args    = try(init_container.value.args, [])
+        cpu     = init_container.value.cpu
+        memory  = init_container.value.memory
+        command = init_container.value.command
+        args    = init_container.value.args
 
         dynamic "env" {
-          for_each = { for key, env in try(init_container.value.env, {}) : key => env }
+          for_each = init_container.value.env
           content {
             name        = env.key
-            value       = try(env.value.value, null)
-            secret_name = try(env.value.secret_name, null)
+            value       = env.value.value
+            secret_name = env.value.secret_name
           }
         }
 
         dynamic "volume_mounts" {
-          for_each = try(init_container.value.volume_mounts, null) != null ? { default = init_container.value.volume_mounts } : {}
+          for_each = init_container.value.volume_mounts != null ? { default = init_container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
-            sub_path = try(volume_mounts.value.sub_path, null)
+            sub_path = volume_mounts.value.sub_path
           }
         }
       }
@@ -76,44 +98,44 @@ resource "azurerm_container_app" "ca" {
       content {
         name    = container.key
         image   = container.value.image
-        cpu     = try(container.value.cpu, 0.25)
-        memory  = try(container.value.memory, "0.5Gi")
-        command = try(container.value.command, null)
-        args    = try(container.value.args, null)
+        cpu     = container.value.cpu
+        memory  = container.value.memory
+        command = container.value.command
+        args    = container.value.args
 
         dynamic "env" {
-          for_each = { for key, env in try(container.value.env, {}) : key => env }
+          for_each = container.value.env
           content {
             name        = env.key
-            value       = try(env.value.value, null)
-            secret_name = try(env.value.secret_name, null)
+            value       = env.value.value
+            secret_name = env.value.secret_name
           }
         }
 
         dynamic "volume_mounts" {
-          for_each = try(container.value.volume_mounts, null) != null ? { default = container.value.volume_mounts } : {}
+          for_each = container.value.volume_mounts != null ? { default = container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
-            sub_path = try(volume_mounts.value.sub_path, null)
+            sub_path = volume_mounts.value.sub_path
           }
         }
 
         dynamic "liveness_probe" {
-          for_each = try(container.value.liveness_probe, null) != null ? { default = container.value.liveness_probe } : {}
+          for_each = container.value.liveness_probe != null ? { default = container.value.liveness_probe } : {}
           content {
-            transport                        = try(liveness_probe.value.transport, "HTTPS")
+            transport                        = liveness_probe.value.transport
             port                             = liveness_probe.value.port
-            host                             = try(liveness_probe.value.host, null)
-            failure_count_threshold          = try(liveness_probe.value.failure_count_threshold, 3)
-            initial_delay                    = try(liveness_probe.value.initial_delay, 30)
-            interval_seconds                 = try(liveness_probe.value.interval_seconds, 10)
-            path                             = try(liveness_probe.value.path, "/")
-            timeout                          = try(liveness_probe.value.timeout, 1)
-            termination_grace_period_seconds = try(liveness_probe.value.termination_grace_period_seconds, null)
+            host                             = liveness_probe.value.host
+            failure_count_threshold          = liveness_probe.value.failure_count_threshold
+            initial_delay                    = liveness_probe.value.initial_delay
+            interval_seconds                 = liveness_probe.value.interval_seconds
+            path                             = liveness_probe.value.path
+            timeout                          = liveness_probe.value.timeout
+            termination_grace_period_seconds = liveness_probe.value.termination_grace_period_seconds
 
             dynamic "header" {
-              for_each = try(liveness_probe.value.header, null) != null ? [1] : []
+              for_each = liveness_probe.value.header != null ? [1] : []
               content {
                 name  = liveness_probe.value.header.name
                 value = liveness_probe.value.header.value
@@ -123,20 +145,20 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "readiness_probe" {
-          for_each = try(container.value.readiness_probe, null) != null ? { default = container.value.readiness_probe } : {}
+          for_each = container.value.readiness_probe != null ? { default = container.value.readiness_probe } : {}
           content {
-            transport               = try(readiness_probe.value.transport, "HTTPS")
+            transport               = readiness_probe.value.transport
             port                    = readiness_probe.value.port
-            host                    = try(readiness_probe.value.host, null)
-            initial_delay           = try(readiness_probe.value.initial_delay, 0)
-            failure_count_threshold = try(readiness_probe.value.failure_count_threshold, 3)
-            success_count_threshold = try(readiness_probe.value.termination_grace_period_seconds, 3)
-            interval_seconds        = try(readiness_probe.value.interval_seconds, 10)
-            path                    = try(readiness_probe.value.path, "/")
-            timeout                 = try(readiness_probe.value.timeout, 1)
+            host                    = readiness_probe.value.host
+            initial_delay           = readiness_probe.value.initial_delay
+            failure_count_threshold = readiness_probe.value.failure_count_threshold
+            success_count_threshold = readiness_probe.value.termination_grace_period_seconds
+            interval_seconds        = readiness_probe.value.interval_seconds
+            path                    = readiness_probe.value.path
+            timeout                 = readiness_probe.value.timeout
 
             dynamic "header" {
-              for_each = try(readiness_probe.value.header, null) != null ? [1] : []
+              for_each = readiness_probe.value.header != null ? [1] : []
               content {
                 name  = readiness_probe.value.header.name
                 value = readiness_probe.value.header.value
@@ -146,19 +168,20 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "startup_probe" {
-          for_each = try(container.value.startup_probe, null) != null ? { default = container.value.startup_probe } : {}
+          for_each = container.value.startup_probe != null ? { default = container.value.startup_probe } : {}
           content {
-            transport                        = try(startup_probe.value.transport, "HTTPS")
+            transport                        = startup_probe.value.transport
             port                             = startup_probe.value.port
-            host                             = try(startup_probe.value.host, null)
-            failure_count_threshold          = try(startup_probe.value.failure_count_threshold, 3)
-            interval_seconds                 = try(startup_probe.value.interval_seconds, 10)
-            path                             = try(startup_probe.value.path, "/")
-            timeout                          = try(startup_probe.value.timeout, 1)
-            termination_grace_period_seconds = try(startup_probe.value.termination_grace_period_seconds, null)
+            host                             = startup_probe.value.host
+            failure_count_threshold          = startup_probe.value.failure_count_threshold
+            initial_delay                    = startup_probe.value.initial_delay
+            interval_seconds                 = startup_probe.value.interval_seconds
+            path                             = startup_probe.value.path
+            timeout                          = startup_probe.value.timeout
+            termination_grace_period_seconds = startup_probe.value.termination_grace_period_seconds
 
             dynamic "header" {
-              for_each = try(startup_probe.value.header, null) != null ? [1] : []
+              for_each = startup_probe.value.header != null ? [1] : []
               content {
                 name  = startup_probe.value.header.name
                 value = startup_probe.value.header.value
@@ -170,14 +193,14 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "azure_queue_scale_rule" {
-      for_each = try(each.value.template.azure_queue_scale_rule, null) != null ? { default = each.value.template.azure_queue_scale_rule } : {}
+      for_each = each.value.template.azure_queue_scale_rule != null ? { default = each.value.template.azure_queue_scale_rule } : {}
       content {
         name         = azure_queue_scale_rule.value.name
         queue_name   = azure_queue_scale_rule.value.queue_name
         queue_length = azure_queue_scale_rule.value.queue_length
 
         dynamic "authentication" {
-          for_each = try(azure_queue_scale_rule.value.template.authentication, null) != null ? { default = azure_queue_scale_rule.value.template.authentication } : {}
+          for_each = azure_queue_scale_rule.value.template.authentication != null ? { default = azure_queue_scale_rule.value.template.authentication } : {}
           content {
             secret_name       = azure_queue_scale_rule.value.authentication.secret_name
             trigger_parameter = azure_queue_scale_rule.value.authentication.trigger_parameter
@@ -187,14 +210,14 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "custom_scale_rule" {
-      for_each = try(each.value.template.custom_scale_rule, null) != null ? { default = each.value.template.custom_scale_rule } : {}
+      for_each = each.value.template.custom_scale_rule != null ? { default = each.value.template.custom_scale_rule } : {}
       content {
         name             = custom_scale_rule.value.name
         custom_rule_type = custom_scale_rule.value.custom_rule_type
         metadata         = custom_scale_rule.value.metadata
 
         dynamic "authentication" {
-          for_each = try(custom_scale_rule.value.authentication, null) != null ? { default = custom_scale_rule.value.authentication } : {}
+          for_each = custom_scale_rule.value.authentication != null ? { default = custom_scale_rule.value.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -204,13 +227,13 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "http_scale_rule" {
-      for_each = try(each.value.template.http_scale_rule, null) != null ? { default = each.value.template.http_scale_rule } : {}
+      for_each = each.value.template.http_scale_rule != null ? { default = each.value.template.http_scale_rule } : {}
       content {
         name                = http_scale_rule.value.name
         concurrent_requests = http_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = try(http_scale_rule.value.template.authentication, null) != null ? { default = http_scale_rule.value.template.authentication } : {}
+          for_each = http_scale_rule.value.template.authentication != null ? { default = http_scale_rule.value.template.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -220,13 +243,13 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "tcp_scale_rule" {
-      for_each = try(each.value.template.tcp_scale_rule, null) != null ? { default = each.value.template.tcp_scale_rule } : {}
+      for_each = each.value.template.tcp_scale_rule != null ? { default = each.value.template.tcp_scale_rule } : {}
       content {
         name                = tcp_scale_rule.value.name
         concurrent_requests = tcp_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = try(tcp_scale_rule.value.template.authentication, null) != null ? { default = tcp_scale_rule.value.template.authentication } : {}
+          for_each = tcp_scale_rule.value.template.authentication != null ? { default = tcp_scale_rule.value.template.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -236,247 +259,270 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "volume" {
-      for_each = try(each.value.volume, null) != null ? { default = each.value.volume } : {}
+      for_each = each.value.volume != null ? { default = each.value.volume } : {}
       content {
         name          = volume.value.name
-        storage_name  = try(volume.value.storage_name, null)
-        storage_type  = try(volume.value.storage_type, null)
-        mount_options = try(volume.value.mount_options, null)
+        storage_name  = volume.value.storage_name
+        storage_type  = volume.value.storage_type
+        mount_options = volume.value.mount_options
       }
     }
   }
 
   dynamic "ingress" {
-    for_each = try(each.value.ingress, null) != null ? { default = each.value.ingress } : {}
+    for_each = each.value.ingress != null ? { default = each.value.ingress } : {}
 
     content {
-      allow_insecure_connections = try(ingress.value.allow_insecure_connections, false)
-      external_enabled           = try(ingress.value.external_enabled, false)
-      fqdn                       = try(ingress.value.fqdn, null)
+      allow_insecure_connections = ingress.value.allow_insecure_connections
+      external_enabled           = ingress.value.external_enabled
+      fqdn                       = ingress.value.fqdn
       target_port                = ingress.value.target_port
-      exposed_port               = try(ingress.value.transport, null) == "tcp" ? ingress.value.exposed_port : null
-      transport                  = try(ingress.value.transport, "auto")
-      client_certificate_mode    = try(ingress.value.client_certificate_mode, null)
+      exposed_port               = ingress.value.transport == "tcp" ? ingress.value.exposed_port : null
+      transport                  = ingress.value.transport
+      client_certificate_mode    = ingress.value.client_certificate_mode
 
 
       dynamic "traffic_weight" {
         ## This block only applies when revision_mode is set to Multiple.
-        for_each = { for k, v in try(ingress.value.traffic_weight, null) : k => v }
+        for_each = ingress.value.traffic_weight
         content {
-          label           = try(traffic_weight.value.label, null)
-          latest_revision = try(traffic_weight.value.latest_revision, true)
-          percentage      = try(traffic_weight.value.percentage, 100)
-          revision_suffix = try(traffic_weight.value.latest_revision, null) == false ? traffic_weight.value.revision_suffix : null
+          label           = traffic_weight.value.label
+          latest_revision = traffic_weight.value.latest_revision
+          percentage      = traffic_weight.value.percentage
+          revision_suffix = traffic_weight.value.latest_revision == false ? traffic_weight.value.revision_suffix : null
         }
       }
 
       dynamic "ip_security_restriction" {
         ## The action types in an all ip_security_restriction blocks must be the same for the ingress, mixing Allow and Deny rules is not currently supported by the service.
-        for_each = try(ingress.value.ip_security_restriction, null) != null ? { default = ingress.value.ip_security_restriction } : {}
+        for_each = ingress.value.ip_security_restriction != null ? { default = ingress.value.ip_security_restriction } : {}
         content {
-          name             = try(ip_security_restriction.value.name, null)
-          description      = try(ip_security_restriction.value.description, null)
+          name             = ip_security_restriction.value.name
+          description      = ip_security_restriction.value.description
           action           = ip_security_restriction.value.action
           ip_address_range = ip_security_restriction.value.ip_address_range
+        }
+      }
+
+      dynamic "cors" {
+        for_each = ingress.value.cors != null ? { default = ingress.value.cors } : {}
+        content {
+          allowed_origins           = cors.value.allowed_origins
+          allowed_methods           = cors.value.allowed_methods
+          allowed_headers           = cors.value.allowed_headers
+          exposed_headers           = cors.value.exposed_headers
+          max_age_in_seconds        = cors.value.max_age_in_seconds
+          allow_credentials_enabled = cors.value.allow_credentials_enabled
         }
       }
     }
   }
 
   dynamic "dapr" {
-    for_each = try(each.value.dapr, null) != null ? { default = each.value.dapr } : {}
+    for_each = each.value.dapr != null ? { default = each.value.dapr } : {}
     content {
       app_id       = dapr.value.app_id
-      app_port     = try(dapr.value.app_port, null)
-      app_protocol = try(dapr.value.app_protocol, "http")
+      app_port     = dapr.value.app_port
+      app_protocol = dapr.value.app_protocol
     }
   }
 
   dynamic "registry" {
-    for_each = try(each.value.registry, null) != null ? { default = each.value.registry } : {}
+    for_each = each.value.registry != null ? { default = each.value.registry } : {}
     content {
-      server = registry.value.server
-      identity = try(registry.value.scope, null) != null ? try(registry.value.identity.id,
-      azurerm_user_assigned_identity.identity[try(registry.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id, ) : null
-      username             = try(registry.value.username, null)
-      password_secret_name = try(registry.value.password_secret_name, null)
+      server               = registry.value.server
+      identity             = registry.value.identity_id
+      username             = registry.value.username
+      password_secret_name = registry.value.password_secret_name
     }
   }
 
   dynamic "secret" {
-    for_each = { for key, sec in lookup(each.value, "secrets", {}) : key => sec }
+    for_each = each.value.secrets != null ? each.value.secrets : {}
     content {
-      name  = secret.key
-      value = try(secret.value.value, null)
-      identity = try(
-        secret.value.key_vault_secret_id, null) == null ? null : try(secret.value.identity.id, null) != null ? secret.value.identity.id : azurerm_user_assigned_identity.identity[try(
-      secret.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id
-      key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
+      name                = secret.key
+      value               = secret.value.value
+      identity            = secret.value.identity_id
+      key_vault_secret_id = secret.value.key_vault_secret_id
     }
   }
 
   dynamic "identity" {
-    for_each = length([for id in local.merged_identities_all : id if id.ca_name == each.key
-    ]) > 0 ? { default = local.merged_identities_all } : {}
-
+    for_each = each.value.identity != null ? { default = each.value.identity } : {}
     content {
-      type = try(identity.value.type, "UserAssigned")
-      identity_ids = concat([for id in identity.value : azurerm_user_assigned_identity.identity[id.id_name].id if id.identity_id == {} && id.ca_name == each.key],
-      [for id in identity.value : id.identity_id if id.identity_id != {} && id.ca_name == each.key])
+      type         = identity.value.type
+      identity_ids = identity.value.identity_ids
     }
   }
-  tags = try(each.value.tags, var.tags)
+  tags = coalesce(each.value.tags, var.tags)
+}
 
-  depends_on = [azurerm_role_assignment.role_secret_user, azurerm_role_assignment.role_acr_pull]
+# Role assignments for ACR pull access when using managed identity
+resource "azurerm_role_assignment" "role_acr_pull" {
+  for_each = merge(
+    {
+      for ca_key, ca in lookup(var.environment, "container_apps", {}) : "ca-${ca_key}" => ca
+      if ca.identity != null && ca.registry != null && lookup(ca.registry, "role_assignment_enabled", true) == true
+    },
+    {
+      for job_key, job in lookup(var.environment, "jobs", {}) : "job-${job_key}" => job
+      if job.identity != null && job.registry != null && lookup(job.registry, "role_assignment_enabled", true) == true
+    }
+  )
+
+  scope                = each.value.registry.scope
+  role_definition_name = "AcrPull"
+  principal_id         = each.value.identity.principal_id
+}
+
+# Role assignments for Key Vault secret access when using managed identity
+resource "azurerm_role_assignment" "role_kv_secrets_user" {
+  for_each = merge(
+    {
+      for ca_key, ca in lookup(var.environment, "container_apps", {}) : "ca-${ca_key}" => ca
+      if ca.identity != null && contains(keys(ca), "secrets") && lookup(ca, "key_vault_role_assignment_enabled", true) == true
+    },
+    {
+      for job_key, job in lookup(var.environment, "jobs", {}) : "job-${job_key}" => job
+      if job.identity != null && contains(keys(job), "secrets") && lookup(job, "key_vault_role_assignment_enabled", true) == true
+    }
+  )
+
+  scope                = each.value.key_vault_scope
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = each.value.identity.principal_id
 }
 
 resource "azurerm_container_app_environment_certificate" "certificate" {
-  for_each = { for caec in local.custom_domain_certificates : caec.key => caec }
+  for_each = merge([
+    for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
+      for cert_key, cert in(ca.certificates != null ? ca.certificates : {}) : "${ca_key}-${cert_key}" => {
+        ca_key                = ca_key
+        name                  = cert.name
+        key_vault_certificate = cert.key_vault_certificate
+        path                  = cert.path
+        password              = cert.password
+      }
+    }
+  ]...)
 
   name                         = each.value.name
-  container_app_environment_id = azurerm_container_app_environment.cae.id
-  certificate_blob_base64      = try(each.value.key_vault_certificate, filebase64(each.value.path))
+  container_app_environment_id = local.environment_id
+  certificate_blob_base64      = coalesce(each.value.key_vault_certificate, filebase64(each.value.path))
   certificate_password         = each.value.password
 
-  tags = try(var.environment.tags, var.tags)
+  tags = coalesce(var.environment.tags, var.tags)
 }
 
 resource "azurerm_container_app_custom_domain" "domain" {
-  for_each = { for domain in local.custom_domain_certificates : domain.key => domain }
+  for_each = merge([
+    for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
+      for cert_key, cert in(ca.certificates != null ? ca.certificates : {}) : "${ca_key}-${cert_key}" => {
+        ca_key       = ca_key
+        fqdn         = cert.fqdn
+        binding_type = cert.binding_type
+      }
+    }
+  ]...)
 
   name                                     = trimprefix(each.value.fqdn, "asuid.")
-  container_app_id                         = azurerm_container_app.ca[each.value.ca_name].id
+  container_app_id                         = azurerm_container_app.ca[each.value.ca_key].id
   container_app_environment_certificate_id = azurerm_container_app_environment_certificate.certificate[each.key].id
-  certificate_binding_type                 = try(each.value.binding_type, "Disabled")
+  certificate_binding_type                 = each.value.binding_type
 }
 
-resource "azurerm_user_assigned_identity" "identity" {
-  for_each = { for id in local.merged_identities_filtered : id.id_name => id }
 
-  name                = each.key
-  resource_group_name = try(each.value.resource_group, var.resource_group)
-  location            = try(each.value.location, var.location)
-  tags                = try(each.value.tags, var.environment.tags, var.tags)
-}
-
-resource "azurerm_role_assignment" "role_secret_user" {
-  for_each = { for id in local.unique_uai_secrets_map : id.id_name => id }
-
-  scope                                  = each.value.kv_scope
-  role_definition_name                   = "Key Vault Secrets User"
-  principal_id                           = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
-  principal_type                         = try(each.value.principal_type, "ServicePrincipal")
-  description                            = "Grants Key Vault Secrets User role to User Assigned Managed Identity"
-  condition                              = try(each.value.condition, null)
-  condition_version                      = try(each.value.condition_version, null)
-  delegated_managed_identity_resource_id = try(each.value.delegated_managed_identity_resource_id, null)
-}
-
-resource "azurerm_role_assignment" "role_acr_pull" {
-  for_each = { for id in local.user_assigned_identity_registry : id.id_name => id }
-
-  scope                                  = each.value.scope
-  role_definition_name                   = "AcrPull"
-  principal_id                           = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity[each.key].principal_id
-  principal_type                         = try(each.value.principal_type, "ServicePrincipal")
-  description                            = "Grants AcrPull role to User Assigned Managed Identity"
-  condition                              = try(each.value.condition, null)
-  condition_version                      = try(each.value.condition_version, null)
-  delegated_managed_identity_resource_id = try(each.value.delegated_managed_identity_resource_id, null)
-}
 
 resource "azurerm_container_app_job" "job" {
-  for_each = {
-    for job_key, job in lookup(var.environment, "jobs", {}) : job_key => job
-  }
+  for_each = var.environment.jobs != null ? var.environment.jobs : {}
 
-  name                         = try(each.value.name, "${var.naming.container_app_job}-${each.key}")
-  location                     = coalesce(lookup(each.value, "location", null), var.environment.location)
-  resource_group_name          = coalesce(lookup(each.value, "resource_group", null), var.environment.resource_group)
-  container_app_environment_id = azurerm_container_app_environment.cae.id
+  name                         = coalesce(each.value.name, try("${var.naming.container_app_job}-${each.key}", each.key))
+  location                     = coalesce(each.value.location, var.environment.location, var.location)
+  resource_group_name          = coalesce(each.value.resource_group_name, var.environment.resource_group_name, var.resource_group_name)
+  container_app_environment_id = local.environment_id
   replica_timeout_in_seconds   = each.value.replica_timeout_in_seconds
 
-  workload_profile_name = try(each.value.workload_profile_name, null)
-  replica_retry_limit   = try(each.value.replica_retry_limit, null)
+  workload_profile_name = each.value.workload_profile_name
+  replica_retry_limit   = each.value.replica_retry_limit
 
   template {
     dynamic "init_container" {
-      for_each = try(each.value.template.init_container, null) != null ? { default = each.value.template.init_container } : {}
+      for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}
       content {
         name              = init_container.value.name
         image             = init_container.value.image
-        cpu               = try(init_container.value.cpu, 0.25)
-        memory            = try(init_container.value.memory, "0.5Gi")
-        command           = try(init_container.value.command, [])
-        args              = try(init_container.value.args, [])
-        ephemeral_storage = try(init_container.value.ephemeral_storage, null)
+        cpu               = init_container.value.cpu
+        memory            = init_container.value.memory
+        command           = init_container.value.command
+        args              = init_container.value.args
+        ephemeral_storage = init_container.value.ephemeral_storage
         ## ephemeral_storage is currently in preview and not configurable at this time.
 
         dynamic "env" {
-          for_each = { for key, env in try(init_container.value.env, {}) : key => env }
+          for_each = init_container.value.env
           content {
             name        = env.key
-            value       = try(env.value.value, null)
-            secret_name = try(env.value.secret_name, null)
+            value       = env.value.value
+            secret_name = env.value.secret_name
           }
         }
 
         dynamic "volume_mounts" {
-          for_each = try(init_container.value.volume_mounts, null) != null ? { default = init_container.value.volume_mounts } : {}
+          for_each = init_container.value.volume_mounts != null ? { default = init_container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
-            sub_path = try(volume_mounts.value.sub_path, null)
+            sub_path = volume_mounts.value.sub_path
           }
         }
       }
     }
 
     dynamic "container" {
-      for_each = try(each.value.template.container, null) != null ? { default = each.value.template.container } : {}
+      for_each = each.value.template.container != null ? { default = each.value.template.container } : {}
       content {
         name              = container.value.name
         image             = container.value.image
-        cpu               = try(container.value.cpu, 0.25)
-        memory            = try(container.value.memory, "0.5Gi")
-        command           = try(container.value.command, null)
-        args              = try(container.value.args, null)
-        ephemeral_storage = try(container.value.ephemeral_storage, null)
+        cpu               = container.value.cpu
+        memory            = container.value.memory
+        command           = container.value.command
+        args              = container.value.args
+        ephemeral_storage = container.value.ephemeral_storage
         ## ephemeral_storage is currently in preview and not configurable at this time.
 
         dynamic "env" {
-          for_each = { for key, env in try(container.value.env, {}) : key => env }
+          for_each = container.value.env
           content {
             name        = env.key
-            value       = try(env.value.value, null)
-            secret_name = try(env.value.secret_name, null)
+            value       = env.value.value
+            secret_name = env.value.secret_name
           }
         }
 
         dynamic "volume_mounts" {
-          for_each = try(container.value.volume_mounts, null) != null ? { default = container.value.volume_mounts } : {}
+          for_each = container.value.volume_mounts != null ? { default = container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
-            sub_path = try(volume_mounts.value.sub_path, null)
+            sub_path = volume_mounts.value.sub_path
           }
         }
 
         dynamic "liveness_probe" {
-          for_each = try(container.value.liveness_probe, null) != null ? { default = container.value.liveness_probe } : {}
+          for_each = container.value.liveness_probe != null ? { default = container.value.liveness_probe } : {}
           content {
-            transport                        = try(liveness_probe.value.transport, "HTTPS")
+            transport                        = liveness_probe.value.transport
             port                             = liveness_probe.value.port
-            host                             = try(liveness_probe.value.host, null)
-            failure_count_threshold          = try(liveness_probe.value.failure_count_threshold, 3)
-            initial_delay                    = try(liveness_probe.value.initial_delay, 30)
-            interval_seconds                 = try(liveness_probe.value.interval_seconds, 10)
-            path                             = try(liveness_probe.value.path, "/")
-            timeout                          = try(liveness_probe.value.timeout, 1)
-            termination_grace_period_seconds = try(liveness_probe.value.termination_grace_period_seconds, null)
+            host                             = liveness_probe.value.host
+            failure_count_threshold          = liveness_probe.value.failure_count_threshold
+            initial_delay                    = liveness_probe.value.initial_delay
+            interval_seconds                 = liveness_probe.value.interval_seconds
+            path                             = liveness_probe.value.path
+            timeout                          = liveness_probe.value.timeout
+            termination_grace_period_seconds = liveness_probe.value.termination_grace_period_seconds
 
             dynamic "header" {
-              for_each = try(liveness_probe.value.header, null) != null ? [1] : []
+              for_each = liveness_probe.value.header != null ? [1] : []
               content {
                 name  = liveness_probe.value.header.name
                 value = liveness_probe.value.header.value
@@ -486,20 +532,20 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "readiness_probe" {
-          for_each = try(container.value.readiness_probe, null) != null ? { default = container.value.readiness_probe } : {}
+          for_each = container.value.readiness_probe != null ? { default = container.value.readiness_probe } : {}
           content {
-            transport               = try(readiness_probe.value.transport, "HTTPS")
+            transport               = readiness_probe.value.transport
             port                    = readiness_probe.value.port
-            host                    = try(readiness_probe.value.host, null)
-            initial_delay           = try(readiness_probe.value.initial_delay, 0)
-            failure_count_threshold = try(readiness_probe.value.failure_count_threshold, 3)
-            success_count_threshold = try(readiness_probe.value.termination_grace_period_seconds, 3)
-            interval_seconds        = try(readiness_probe.value.interval_seconds, 10)
-            path                    = try(readiness_probe.value.path, "/")
-            timeout                 = try(readiness_probe.value.timeout, 1)
+            host                    = readiness_probe.value.host
+            initial_delay           = readiness_probe.value.initial_delay
+            failure_count_threshold = readiness_probe.value.failure_count_threshold
+            success_count_threshold = readiness_probe.value.termination_grace_period_seconds
+            interval_seconds        = readiness_probe.value.interval_seconds
+            path                    = readiness_probe.value.path
+            timeout                 = readiness_probe.value.timeout
 
             dynamic "header" {
-              for_each = try(readiness_probe.value.header, null) != null ? [1] : []
+              for_each = readiness_probe.value.header != null ? [1] : []
               content {
                 name  = readiness_probe.value.header.name
                 value = readiness_probe.value.header.value
@@ -509,20 +555,20 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "startup_probe" {
-          for_each = try(container.value.startup_probe, null) != null ? { default = container.value.startup_probe } : {}
+          for_each = container.value.startup_probe != null ? { default = container.value.startup_probe } : {}
           content {
-            transport                        = try(startup_probe.value.transport, "HTTPS")
+            transport                        = startup_probe.value.transport
             port                             = startup_probe.value.port
-            host                             = try(startup_probe.value.host, null)
-            initial_delay                    = try(startup_probe.value.initial_delay, 0)
-            failure_count_threshold          = try(startup_probe.value.failure_count_threshold, 3)
-            interval_seconds                 = try(startup_probe.value.interval_seconds, 10)
-            path                             = try(startup_probe.value.path, "/")
-            timeout                          = try(startup_probe.value.timeout, 1)
-            termination_grace_period_seconds = try(startup_probe.value.termination_grace_period_seconds, null)
+            host                             = startup_probe.value.host
+            initial_delay                    = startup_probe.value.initial_delay
+            failure_count_threshold          = startup_probe.value.failure_count_threshold
+            interval_seconds                 = startup_probe.value.interval_seconds
+            path                             = startup_probe.value.path
+            timeout                          = startup_probe.value.timeout
+            termination_grace_period_seconds = startup_probe.value.termination_grace_period_seconds
 
             dynamic "header" {
-              for_each = try(startup_probe.value.header, null) != null ? [1] : []
+              for_each = startup_probe.value.header != null ? [1] : []
               content {
                 name  = startup_probe.value.header.name
                 value = startup_probe.value.header.value
@@ -534,80 +580,74 @@ resource "azurerm_container_app_job" "job" {
     }
 
     dynamic "volume" {
-      for_each = try(each.value.template.volume, null) != null ? { default = each.value.template.volume } : {}
+      for_each = each.value.template.volume != null ? { default = each.value.template.volume } : {}
       content {
         name          = volume.value.name
-        storage_type  = try(volume.value.storage_type, null)
-        storage_name  = try(volume.value.storage_name, null)
-        mount_options = try(volume.value.mount_options, null)
+        storage_type  = volume.value.storage_type
+        storage_name  = volume.value.storage_name
+        mount_options = volume.value.mount_options
       }
     }
   }
 
   dynamic "registry" {
-    for_each = try(each.value.registry, null) != null ? { default = each.value.registry } : {}
+    for_each = each.value.registry != null ? { default = each.value.registry } : {}
     content {
-      server = registry.value.server
-      identity = try(registry.value.scope, null) != null ? try(registry.value.identity.id,
-      azurerm_user_assigned_identity.identity_jobs[try(registry.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id, ) : null
-      username             = try(registry.value.username, null)
-      password_secret_name = try(registry.value.password_secret_name, null)
+      server               = registry.value.server
+      identity             = registry.value.identity_id
+      username             = registry.value.username
+      password_secret_name = registry.value.password_secret_name
     }
   }
 
   dynamic "secret" {
-    for_each = { for key, sec in lookup(each.value, "secrets", {}) : key => sec }
+    for_each = each.value.secrets
     content {
-      name  = secret.key
-      value = try(secret.value.value, null)
-      identity = try(
-        secret.value.key_vault_secret_id, null) == null ? null : try(secret.value.identity.id, null) != null ? secret.value.identity.id : azurerm_user_assigned_identity.identity_jobs[try(
-      secret.value.identity.name, "${var.naming.user_assigned_identity}-${each.key}")].id
-      key_vault_secret_id = try(secret.value.key_vault_secret_id, null)
+      name                = secret.key
+      value               = secret.value.value
+      identity            = secret.value.identity_id
+      key_vault_secret_id = secret.value.key_vault_secret_id
     }
   }
 
   dynamic "identity" {
-    for_each = length([for id in local.merged_jobs_identities_all : id if id.job_name == each.key
-    ]) > 0 ? { default = local.merged_jobs_identities_all } : {}
-
+    for_each = each.value.identity != null ? { default = each.value.identity } : {}
     content {
-      type = try(identity.value.type, "UserAssigned")
-      identity_ids = concat([for id in identity.value : azurerm_user_assigned_identity.identity_jobs[id.id_name].id if id.identity_id == {} && id.job_name == each.key],
-      [for id in identity.value : id.identity_id if id.identity_id != {} && id.job_name == each.key])
+      type         = identity.value.type
+      identity_ids = identity.value.identity_ids
     }
   }
 
   dynamic "manual_trigger_config" {
-    for_each = try(each.value.manual_trigger_config, null) != null ? { default = each.value.manual_trigger_config } : {}
+    for_each = each.value.manual_trigger_config != null ? { default = each.value.manual_trigger_config } : {}
     content {
-      parallelism              = try(manual_trigger_config.value.parallelism, null)
-      replica_completion_count = try(manual_trigger_config.value.replica_completion_count, null)
+      parallelism              = manual_trigger_config.value.parallelism
+      replica_completion_count = manual_trigger_config.value.replica_completion_count
     }
   }
 
   dynamic "event_trigger_config" {
-    for_each = try(each.value.event_trigger_config, null) != null ? { default = each.value.event_trigger_config } : {}
+    for_each = each.value.event_trigger_config != null ? { default = each.value.event_trigger_config } : {}
     content {
-      parallelism              = try(event_trigger_config.value.parallelism, null)
-      replica_completion_count = try(event_trigger_config.value.replica_completion_count, null)
+      parallelism              = event_trigger_config.value.parallelism
+      replica_completion_count = event_trigger_config.value.replica_completion_count
 
       dynamic "scale" {
-        for_each = try(event_trigger_config.value.scale, null) != null ? { default = event_trigger_config.value.scale } : {}
+        for_each = event_trigger_config.value.scale != null ? { default = event_trigger_config.value.scale } : {}
         content {
-          max_executions              = try(scale.value.max_executions, null)
-          min_executions              = try(scale.value.min_executions, null)
-          polling_interval_in_seconds = try(scale.value.polling_interval_in_seconds, null)
+          max_executions              = scale.value.max_executions
+          min_executions              = scale.value.min_executions
+          polling_interval_in_seconds = scale.value.polling_interval_in_seconds
 
           dynamic "rules" {
-            for_each = try(scale.value.rules, null) != null ? { default = scale.value.rules } : {}
+            for_each = scale.value.rules != null ? { default = scale.value.rules } : {}
             content {
-              name             = try(rules.value.name, null)
-              custom_rule_type = try(rules.value.custom_rule_type, null)
-              metadata         = try(rules.value.metadata, {})
+              name             = rules.value.name
+              custom_rule_type = rules.value.custom_rule_type
+              metadata         = rules.value.metadata
 
               dynamic "authentication" {
-                for_each = { for key, auth in lookup(rules.value, "authentication", {}) : key => auth }
+                for_each = lookup(rules.value, "authentication", {})
                 content {
                   trigger_parameter = authentication.value.trigger_parameter
                   secret_name       = authentication.value.secret_name
@@ -621,42 +661,14 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "schedule_trigger_config" {
-    for_each = try(each.value.schedule_trigger_config, null) != null ? { default = each.value.schedule_trigger_config } : {}
+    for_each = each.value.schedule_trigger_config != null ? { default = each.value.schedule_trigger_config } : {}
     content {
-      parallelism              = try(schedule_trigger_config.value.parallelism, null)
-      replica_completion_count = try(schedule_trigger_config.value.replica_completion_count, null)
+      parallelism              = schedule_trigger_config.value.parallelism
+      replica_completion_count = schedule_trigger_config.value.replica_completion_count
       cron_expression          = schedule_trigger_config.value.cron_expression
     }
   }
 
-  tags = try(each.value.tags, var.tags)
-
-  depends_on = [
-    azurerm_role_assignment.role_acr_pull_jobs
-  ]
+  tags = coalesce(each.value.tags, var.tags)
 }
 
-resource "azurerm_user_assigned_identity" "identity_jobs" {
-  for_each = { for id in local.merged_jobs_identities_filtered : id.id_name => id }
-
-  name                = each.key
-  resource_group_name = try(each.value.resource_group, var.resource_group)
-  location            = try(each.value.location, var.location)
-  tags                = try(each.value.tags, var.environment.tags, var.tags)
-}
-
-resource "azurerm_role_assignment" "role_secret_user_jobs" {
-  for_each = { for id in local.unique_uai_jobs_secrets_map : id.id_name => id }
-
-  scope                = each.value.kv_scope
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity_jobs[each.key].principal_id
-}
-
-resource "azurerm_role_assignment" "role_acr_pull_jobs" {
-  for_each = { for id in local.user_assigned_identity_jobs_registry : id.id_name => id }
-
-  scope                = each.value.scope
-  role_definition_name = "AcrPull"
-  principal_id         = try(each.value.principal_id, null) != null ? each.value.principal_id : azurerm_user_assigned_identity.identity_jobs[each.key].principal_id
-}
