@@ -647,7 +647,7 @@ resource "azurerm_container_app_job" "job" {
               metadata         = rules.value.metadata
 
               dynamic "authentication" {
-                for_each = lookup(rules.value, "authentication", {})
+                for_each = rules.value.authentication != null ? { default = rules.value.authentication } : {}
                 content {
                   trigger_parameter = authentication.value.trigger_parameter
                   secret_name       = authentication.value.secret_name
