@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v3.2.0...v4.0.0) (2025-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* major version refactor ([#78](https://github.com/CloudNationHQ/terraform-azure-ca/issues/78))
+
+### Features
+
+* **deps:** bump github.com/cloudnationhq/az-cn-go-validor in /tests ([#77](https://github.com/CloudNationHQ/terraform-azure-ca/issues/77)) ([e2d7f89](https://github.com/CloudNationHQ/terraform-azure-ca/commit/e2d7f89a7690e7e179570cf8bb60f0115418137b))
+* **deps:** bump github.com/gruntwork-io/terratest in /tests ([#72](https://github.com/CloudNationHQ/terraform-azure-ca/issues/72)) ([5ef8290](https://github.com/CloudNationHQ/terraform-azure-ca/commit/5ef8290734d40fc8359f7fb112b8830457a7fcd3))
+* **deps:** bump github.com/ulikunitz/xz from 0.5.10 to 0.5.14 in /tests ([#73](https://github.com/CloudNationHQ/terraform-azure-ca/issues/73)) ([dc02f64](https://github.com/CloudNationHQ/terraform-azure-ca/commit/dc02f64e16593c0f4c64219310d6660eacb49f9c))
+* major version refactor ([#78](https://github.com/CloudNationHQ/terraform-azure-ca/issues/78)) ([55abe5d](https://github.com/CloudNationHQ/terraform-azure-ca/commit/55abe5d41dbcdb1b7bf1bdb43941082204fa6a2e))
+
 ## [3.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v3.1.0...v3.2.0) (2025-05-07)
 
 
