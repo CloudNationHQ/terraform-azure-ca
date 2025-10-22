@@ -1,6 +1,6 @@
 module "naming" {
   source  = "cloudnationhq/naming/azure"
-  version = "~> 0.1"
+  version = "~> 0.24"
 
   suffix = ["demo", "dev"]
 }
@@ -11,7 +11,7 @@ module "rg" {
 
   groups = {
     demo = {
-      name     = module.naming.resource_group.name
+      name     = module.naming.resource_group.name_unique
       location = "westeurope"
     }
   }
@@ -19,14 +19,14 @@ module "rg" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 3.0"
+  version = "~> 4.0"
 
   naming = local.naming
 
   environment = {
-    name           = module.naming.container_app_environment.name
-    location       = module.rg.groups.demo.location
-    resource_group = module.rg.groups.demo.name
+    name                = module.naming.container_app_environment.name
+    location            = module.rg.groups.demo.location
+    resource_group_name = module.rg.groups.demo.name
 
     container_apps = {
       app1 = {
