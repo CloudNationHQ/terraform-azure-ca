@@ -2,7 +2,7 @@ module "naming" {
   source  = "cloudnationhq/naming/azure"
   version = "~> 0.24"
 
-  suffix = ["demo", "prd"]
+  suffix = ["demo", "dev"]
 }
 
 module "rg" {
@@ -151,7 +151,8 @@ module "uai" {
 }
 
 module "ca" {
-  source = "../../"
+  source  = "cloudnationhq/ca/azure"
+  version = "~> 4.0"
 
   naming = local.naming
 
@@ -229,8 +230,16 @@ module "ca" {
 
       # App with username/password authentication for registry
       app2 = {
-        revision_mode         = "Single"
-        workload_profile_name = "Consumption"
+        revision_mode                     = "Single"
+        workload_profile_name             = "Consumption"
+        key_vault_role_assignment_enabled = false
+
+        identity = {
+          type         = "UserAssigned"
+          identity_ids = [module.uai.config.id]
+          principal_id = module.uai.config.principal_id
+        }
+
         template = {
           min_replicas    = 1
           max_replicas    = 3
@@ -273,9 +282,9 @@ module "ca" {
         }
 
         registry = {
-          server               = module.acr.registry.login_server
-          username             = module.acr.registry.admin_username
-          password_secret_name = "secret-key"
+          server      = module.acr.registry.login_server
+          scope       = module.acr.registry.id
+          identity_id = module.uai.config.id
         }
       }
 
@@ -283,14 +292,13 @@ module "ca" {
       app3 = {
         revision_mode         = "Single"
         workload_profile_name = "Dedicated"
+        key_vault_scope       = module.kv.vault.id
 
         identity = {
           type         = "UserAssigned"
           identity_ids = [module.uai.config.id]
           principal_id = module.uai.config.principal_id
         }
-
-        key_vault_scope = module.kv.vault.id
 
         template = {
           min_replicas    = 1

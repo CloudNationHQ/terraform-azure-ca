@@ -18,7 +18,8 @@ module "rg" {
 }
 
 module "ca" {
-  source = "../../"
+  source  = "cloudnationhq/ca/azure"
+  version = "~> 4.0"
 
   naming = local.naming
 

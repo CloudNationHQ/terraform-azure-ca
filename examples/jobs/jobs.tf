@@ -29,10 +29,8 @@ locals {
               targetWorkflowQueueLength = "1"
             }
             authentication = {
-              auth1 = {
-                secret_name       = "personal-access-token"
-                trigger_parameter = "personalAccessToken"
-              }
+              secret_name       = "personal-access-token"
+              trigger_parameter = "personalAccessToken"
             }
           }
         }
