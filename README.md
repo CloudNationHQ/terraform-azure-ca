@@ -27,7 +27,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (4.49.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 4.0)
 
 ## Resources
 
@@ -404,10 +404,10 @@ object({
             name             = optional(string)
             custom_rule_type = optional(string)
             metadata         = optional(map(string), {})
-            authentication = optional(map(object({
+            authentication = optional(object({
               trigger_parameter = string
               secret_name       = string
-            })), {})
+            }))
           }))
         }))
       }))
