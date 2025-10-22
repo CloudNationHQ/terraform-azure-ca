@@ -10,7 +10,7 @@ output "container_app_jobs" {
 
 output "environment" {
   description = "contains all container app environment configuration"
-  value       = azurerm_container_app_environment.cae
+  value       = var.environment.use_existing ? data.azurerm_container_app_environment.existing : azurerm_container_app_environment.cae
 }
 
 output "certificates" {
@@ -23,7 +23,4 @@ output "custom_domains" {
   value       = azurerm_container_app_custom_domain.domain
 }
 
-output "user_assigned_identities" {
-  description = "contains all user assigned identities configuration"
-  value       = azurerm_user_assigned_identity.identity
-}
+
