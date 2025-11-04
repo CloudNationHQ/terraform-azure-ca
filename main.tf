@@ -152,7 +152,7 @@ resource "azurerm_container_app" "ca" {
             host                    = readiness_probe.value.host
             initial_delay           = readiness_probe.value.initial_delay
             failure_count_threshold = readiness_probe.value.failure_count_threshold
-            success_count_threshold = readiness_probe.value.termination_grace_period_seconds
+            success_count_threshold = readiness_probe.value.success_count_threshold
             interval_seconds        = readiness_probe.value.interval_seconds
             path                    = readiness_probe.value.path
             timeout                 = readiness_probe.value.timeout
@@ -200,7 +200,7 @@ resource "azurerm_container_app" "ca" {
         queue_length = azure_queue_scale_rule.value.queue_length
 
         dynamic "authentication" {
-          for_each = azure_queue_scale_rule.value.template.authentication != null ? { default = azure_queue_scale_rule.value.template.authentication } : {}
+          for_each = azure_queue_scale_rule.value.authentication != null ? { default = azure_queue_scale_rule.value.authentication } : {}
           content {
             secret_name       = azure_queue_scale_rule.value.authentication.secret_name
             trigger_parameter = azure_queue_scale_rule.value.authentication.trigger_parameter
@@ -233,7 +233,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = http_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = http_scale_rule.value.template.authentication != null ? { default = http_scale_rule.value.template.authentication } : {}
+          for_each = http_scale_rule.value.authentication != null ? { default = http_scale_rule.value.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -249,7 +249,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = tcp_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = tcp_scale_rule.value.template.authentication != null ? { default = tcp_scale_rule.value.template.authentication } : {}
+          for_each = tcp_scale_rule.value.authentication != null ? { default = tcp_scale_rule.value.authentication } : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -539,7 +539,7 @@ resource "azurerm_container_app_job" "job" {
             host                    = readiness_probe.value.host
             initial_delay           = readiness_probe.value.initial_delay
             failure_count_threshold = readiness_probe.value.failure_count_threshold
-            success_count_threshold = readiness_probe.value.termination_grace_period_seconds
+            success_count_threshold = readiness_probe.value.success_count_threshold
             interval_seconds        = readiness_probe.value.interval_seconds
             path                    = readiness_probe.value.path
             timeout                 = readiness_probe.value.timeout
@@ -601,7 +601,7 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "secret" {
-    for_each = each.value.secrets
+    for_each = each.value.secrets != null ? each.value.secrets : {}
     content {
       name                = secret.key
       value               = secret.value.value
