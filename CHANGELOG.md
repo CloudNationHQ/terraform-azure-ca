@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.1...v4.0.2) (2025-11-04)
+
+
+### Bug Fixes
+
+* rules and auth dynamic blocks ([#83](https://github.com/CloudNationHQ/terraform-azure-ca/issues/83)) ([4ffdf18](https://github.com/CloudNationHQ/terraform-azure-ca/commit/4ffdf188cd99be2958a6b88b02c6855fde0bc7f0))
+
 ## [4.0.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.0...v4.0.1) (2025-11-04)
 
 
