@@ -21,16 +21,20 @@ locals {
       event_trigger_config = {
         scale = {
           rules = {
-            name             = "rule1"
-            custom_rule_type = "github-runner"
-            metadata = {
-              githubAPIURL              = "https://api.github.com"
-              runnerScope               = "repo"
-              targetWorkflowQueueLength = "1"
-            }
-            authentication = {
-              secret_name       = "personal-access-token"
-              trigger_parameter = "personalAccessToken"
+            rule1 = {
+              name             = "rule1"
+              custom_rule_type = "github-runner"
+              metadata = {
+                githubAPIURL              = "https://api.github.com"
+                runnerScope               = "repo"
+                targetWorkflowQueueLength = "1"
+              }
+              authentication = {
+                auth1 = {
+                  secret_name       = "personal-access-token"
+                  trigger_parameter = "personalAccessToken"
+                }
+              }
             }
           }
         }

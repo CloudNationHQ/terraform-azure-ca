@@ -640,14 +640,14 @@ resource "azurerm_container_app_job" "job" {
           polling_interval_in_seconds = scale.value.polling_interval_in_seconds
 
           dynamic "rules" {
-            for_each = scale.value.rules != null ? { default = scale.value.rules } : {}
+            for_each = scale.value.rules != null ? scale.value.rules : {}
             content {
               name             = rules.value.name
               custom_rule_type = rules.value.custom_rule_type
               metadata         = rules.value.metadata
 
               dynamic "authentication" {
-                for_each = rules.value.authentication != null ? { default = rules.value.authentication } : {}
+                for_each = rules.value.authentication != null ? rules.value.authentication : {}
                 content {
                   trigger_parameter = authentication.value.trigger_parameter
                   secret_name       = authentication.value.secret_name
