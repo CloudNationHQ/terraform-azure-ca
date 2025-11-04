@@ -335,7 +335,6 @@ variable "environment" {
         identity_ids = list(string)
         principal_id = optional(string)
       }))
-      kv_scope = optional(string)
       manual_trigger_config = optional(object({
         parallelism              = optional(number)
         replica_completion_count = optional(number)
@@ -347,15 +346,15 @@ variable "environment" {
           max_executions              = optional(number)
           min_executions              = optional(number)
           polling_interval_in_seconds = optional(number)
-          rules = optional(object({
+          rules = optional(map(object({
             name             = optional(string)
             custom_rule_type = optional(string)
             metadata         = optional(map(string), {})
-            authentication = optional(object({
+            authentication = optional(map(object({
               trigger_parameter = string
               secret_name       = string
-            }))
-          }))
+            })))
+          })))
         }))
       }))
       schedule_trigger_config = optional(object({
