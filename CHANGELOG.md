@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.0...v4.0.1) (2025-11-04)
+
+
+### Bug Fixes
+
+* type definitions, and non-existent nested paths for scale rules ([#81](https://github.com/CloudNationHQ/terraform-azure-ca/issues/81)) ([f0ffd46](https://github.com/CloudNationHQ/terraform-azure-ca/commit/f0ffd469ae5ad28fa78d1917a972c7fc5ce144c8))
+
 ## [4.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v3.2.0...v4.0.0) (2025-10-22)
 
 
