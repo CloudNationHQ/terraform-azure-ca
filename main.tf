@@ -408,7 +408,7 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
 
   name                         = each.value.name
   container_app_environment_id = local.environment_id
-  certificate_blob_base64      = coalesce(each.value.key_vault_certificate, filebase64(each.value.path))
+  certificate_blob_base64      = coalesce(each.value.key_vault_certificate, try(filebase64(each.value.path), null))
   certificate_password         = each.value.password
 
   tags = coalesce(var.environment.tags, var.tags)
