@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.3](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.2...v4.0.3) (2025-11-10)
+
+
+### Bug Fixes
+
+* domain certificates sensitive keys ([#86](https://github.com/CloudNationHQ/terraform-azure-ca/issues/86)) ([1970476](https://github.com/CloudNationHQ/terraform-azure-ca/commit/1970476a7c9822174d38f4591c87444f96d7c888))
+
 ## [4.0.2](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.1...v4.0.2) (2025-11-04)
 
 
