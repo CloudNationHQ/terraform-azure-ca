@@ -396,7 +396,7 @@ resource "azurerm_role_assignment" "role_kv_secrets_user" {
 resource "azurerm_container_app_environment_certificate" "certificate" {
   for_each = merge([
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
-      for cert_key, cert in(ca.certificates != null ? ca.certificates : {}) : "${ca_key}-${cert_key}" => {
+      for cert_key, cert in lookup(ca, "certificates", {}) : "${ca_key}-${cert_key}" => {
         ca_key                = ca_key
         name                  = cert.name
         key_vault_certificate = cert.key_vault_certificate
@@ -417,7 +417,7 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
 resource "azurerm_container_app_custom_domain" "domain" {
   for_each = merge([
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
-      for cert_key, cert in(ca.certificates != null ? ca.certificates : {}) : "${ca_key}-${cert_key}" => {
+      for cert_key, cert in lookup(ca, "certificates", {}) : "${ca_key}-${cert_key}" => {
         ca_key       = ca_key
         fqdn         = cert.fqdn
         binding_type = cert.binding_type
@@ -434,7 +434,7 @@ resource "azurerm_container_app_custom_domain" "domain" {
 
 
 resource "azurerm_container_app_job" "job" {
-  for_each = var.environment.jobs != null ? var.environment.jobs : {}
+  for_each = { for job_key, job in lookup(var.environment, "jobs", {}) : job_key => job }
 
   name                         = coalesce(each.value.name, try("${var.naming.container_app_job}-${each.key}", each.key))
   location                     = coalesce(each.value.location, var.environment.location, var.location)
