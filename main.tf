@@ -62,6 +62,7 @@ resource "azurerm_container_app" "ca" {
     max_replicas                     = each.value.template.max_replicas
     revision_suffix                  = each.value.template.revision_suffix
     termination_grace_period_seconds = each.value.template.termination_grace_period_seconds
+    cooldown_period_in_seconds       = each.value.template.cooldown_period_in_seconds
 
     dynamic "init_container" {
       for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}

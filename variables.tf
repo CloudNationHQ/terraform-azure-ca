@@ -36,6 +36,7 @@ variable "environment" {
         max_replicas                     = optional(number, 1)
         revision_suffix                  = optional(string)
         termination_grace_period_seconds = optional(number)
+        cooldown_period_in_seconds       = optional(number)
         init_container = optional(object({
           name    = string
           image   = string
