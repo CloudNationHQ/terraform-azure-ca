@@ -10,6 +10,7 @@ variable "environment" {
     infrastructure_resource_group_name          = optional(string)
     internal_load_balancer_enabled              = optional(bool)
     zone_redundancy_enabled                     = optional(bool)
+    public_network_access                       = optional(string)
     log_analytics_workspace_id                  = optional(string)
     logs_destination                            = optional(string)
     mutual_tls_enabled                          = optional(bool, false)
@@ -36,6 +37,8 @@ variable "environment" {
         max_replicas                     = optional(number, 1)
         revision_suffix                  = optional(string)
         termination_grace_period_seconds = optional(number)
+        cooldown_period_in_seconds       = optional(number)
+        polling_interval_in_seconds      = optional(number)
         init_container = optional(object({
           name    = string
           image   = string
@@ -118,7 +121,7 @@ variable "environment" {
           name         = string
           queue_name   = string
           queue_length = number
-          authentication = optional(object({
+          authentication = map(object({
             secret_name       = string
             trigger_parameter = string
           }))
@@ -127,26 +130,26 @@ variable "environment" {
           name             = string
           custom_rule_type = string
           metadata         = map(string)
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
         http_scale_rule = optional(object({
           name                = string
           concurrent_requests = number
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
         tcp_scale_rule = optional(object({
           name                = string
           concurrent_requests = number
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
       })
       volume = optional(object({
@@ -210,12 +213,16 @@ variable "environment" {
         principal_id = optional(string)
       }))
       certificates = optional(map(object({
-        fqdn                  = optional(string)
-        binding_type          = optional(string)
-        name                  = optional(string)
-        path                  = optional(string)
-        password              = optional(string, "")
-        key_vault_certificate = optional(string)
+        fqdn             = optional(string)
+        binding_type     = optional(string)
+        name             = optional(string)
+        path             = optional(string)
+        password         = optional(string, "")
+        certificate_path = optional(string)
+        key_vault_certificate = optional(object({
+          identity            = optional(string)
+          key_vault_secret_id = string
+        }))
       })), {})
     })), {})
     jobs = optional(map(object({

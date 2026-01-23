@@ -19,6 +19,7 @@ resource "azurerm_container_app_environment" "cae" {
   log_analytics_workspace_id                  = each.value.log_analytics_workspace_id
   logs_destination                            = each.value.logs_destination
   mutual_tls_enabled                          = each.value.mutual_tls_enabled
+  public_network_access                       = each.value.public_network_access
 
   dynamic "identity" {
     for_each = each.value.identity != null ? { default = each.value.identity } : {}
@@ -62,6 +63,8 @@ resource "azurerm_container_app" "ca" {
     max_replicas                     = each.value.template.max_replicas
     revision_suffix                  = each.value.template.revision_suffix
     termination_grace_period_seconds = each.value.template.termination_grace_period_seconds
+    cooldown_period_in_seconds       = each.value.template.cooldown_period_in_seconds
+    polling_interval_in_seconds      = each.value.template.polling_interval_in_seconds
 
     dynamic "init_container" {
       for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}
@@ -200,7 +203,7 @@ resource "azurerm_container_app" "ca" {
         queue_length = azure_queue_scale_rule.value.queue_length
 
         dynamic "authentication" {
-          for_each = azure_queue_scale_rule.value.authentication != null ? { default = azure_queue_scale_rule.value.authentication } : {}
+          for_each = azure_queue_scale_rule.value.authentication != null ? azure_queue_scale_rule.value.authentication : {}
           content {
             secret_name       = azure_queue_scale_rule.value.authentication.secret_name
             trigger_parameter = azure_queue_scale_rule.value.authentication.trigger_parameter
@@ -217,7 +220,7 @@ resource "azurerm_container_app" "ca" {
         metadata         = custom_scale_rule.value.metadata
 
         dynamic "authentication" {
-          for_each = custom_scale_rule.value.authentication != null ? { default = custom_scale_rule.value.authentication } : {}
+          for_each = custom_scale_rule.value.authentication != null ? custom_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -233,7 +236,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = http_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = http_scale_rule.value.authentication != null ? { default = http_scale_rule.value.authentication } : {}
+          for_each = http_scale_rule.value.authentication != null ? http_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -249,7 +252,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = tcp_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = tcp_scale_rule.value.authentication != null ? { default = tcp_scale_rule.value.authentication } : {}
+          for_each = tcp_scale_rule.value.authentication != null ? tcp_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -399,7 +402,8 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
       for cert_key, cert in lookup(ca, "certificates", {}) : "${ca_key}-${cert_key}" => {
         ca_key                = ca_key
         name                  = cert.name
-        key_vault_certificate = cert.key_vault_certificate
+        certificate_path      = cert.certificate_path
+        certificate_key_vault = cert.certificate_key_vault
         path                  = cert.path
         password              = cert.password
       }
@@ -408,8 +412,17 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
 
   name                         = each.value.name
   container_app_environment_id = local.environment_id
-  certificate_blob_base64      = coalesce(each.value.key_vault_certificate, try(filebase64(each.value.path), null))
+  certificate_blob_base64      = filebase64(each.value.certificate_path)
   certificate_password         = each.value.password
+
+  dynamic "certificate_key_vault" {
+    for_each = each.value.certificate_key_vault != null ? { default = each.value.certificate_key_vault } : {}
+
+    content {
+      identity            = certificate_key_vault.value.identity
+      key_vault_secret_id = certificate_key_vault.value.key_vault_secret_id
+    }
+  }
 
   tags = coalesce(var.environment.tags, var.tags)
 }

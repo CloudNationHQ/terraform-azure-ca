@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.1.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.1.0...v4.1.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* set authentication block to a map instead of a single object ([#95](https://github.com/CloudNationHQ/terraform-azure-ca/issues/95)) ([90cff70](https://github.com/CloudNationHQ/terraform-azure-ca/commit/90cff7082feb8cd468667c64a7ff37539257dd8a))
+
+## [4.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.3...v4.1.0) (2026-01-21)
+
+
+### Features
+
+* add missing cooldown property ([#92](https://github.com/CloudNationHQ/terraform-azure-ca/issues/92)) ([639c27e](https://github.com/CloudNationHQ/terraform-azure-ca/commit/639c27e4de24a958447f5aa7725bcf31f4bc0349))
+* **deps:** bump golang.org/x/crypto from 0.36.0 to 0.45.0 in /tests ([#89](https://github.com/CloudNationHQ/terraform-azure-ca/issues/89)) ([a95b729](https://github.com/CloudNationHQ/terraform-azure-ca/commit/a95b7291991f3925d1255833edd9f74ff2274e94))
+
 ## [4.0.3](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.2...v4.0.3) (2025-11-10)
 
 
