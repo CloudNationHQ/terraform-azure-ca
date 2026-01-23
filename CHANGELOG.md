@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.1.0...v4.1.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* set authentication block to a map instead of a single object ([#95](https://github.com/CloudNationHQ/terraform-azure-ca/issues/95)) ([90cff70](https://github.com/CloudNationHQ/terraform-azure-ca/commit/90cff7082feb8cd468667c64a7ff37539257dd8a))
+
 ## [4.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.0.3...v4.1.0) (2026-01-21)
 
 
