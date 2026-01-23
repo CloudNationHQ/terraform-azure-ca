@@ -174,7 +174,7 @@ object({
           name         = string
           queue_name   = string
           queue_length = number
-          authentication = optional(object({
+          authentication = map(object({
             secret_name       = string
             trigger_parameter = string
           }))
@@ -183,26 +183,26 @@ object({
           name             = string
           custom_rule_type = string
           metadata         = map(string)
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
         http_scale_rule = optional(object({
           name                = string
           concurrent_requests = number
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
         tcp_scale_rule = optional(object({
           name                = string
           concurrent_requests = number
-          authentication = optional(object({
+          authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
-          }))
+          })))
         }))
       })
       volume = optional(object({

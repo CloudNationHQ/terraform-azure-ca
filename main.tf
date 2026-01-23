@@ -203,7 +203,7 @@ resource "azurerm_container_app" "ca" {
         queue_length = azure_queue_scale_rule.value.queue_length
 
         dynamic "authentication" {
-          for_each = azure_queue_scale_rule.value.authentication != null ? { default = azure_queue_scale_rule.value.authentication } : {}
+          for_each = azure_queue_scale_rule.value.authentication != null ? azure_queue_scale_rule.value.authentication : {}
           content {
             secret_name       = azure_queue_scale_rule.value.authentication.secret_name
             trigger_parameter = azure_queue_scale_rule.value.authentication.trigger_parameter
@@ -220,7 +220,7 @@ resource "azurerm_container_app" "ca" {
         metadata         = custom_scale_rule.value.metadata
 
         dynamic "authentication" {
-          for_each = custom_scale_rule.value.authentication != null ? { default = custom_scale_rule.value.authentication } : {}
+          for_each = custom_scale_rule.value.authentication != null ? custom_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -236,7 +236,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = http_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = http_scale_rule.value.authentication != null ? { default = http_scale_rule.value.authentication } : {}
+          for_each = http_scale_rule.value.authentication != null ? http_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
@@ -252,7 +252,7 @@ resource "azurerm_container_app" "ca" {
         concurrent_requests = tcp_scale_rule.value.concurrent_requests
 
         dynamic "authentication" {
-          for_each = tcp_scale_rule.value.authentication != null ? { default = tcp_scale_rule.value.authentication } : {}
+          for_each = tcp_scale_rule.value.authentication != null ? tcp_scale_rule.value.authentication : {}
           content {
             secret_name       = authentication.value.secret_name
             trigger_parameter = authentication.value.trigger_parameter
