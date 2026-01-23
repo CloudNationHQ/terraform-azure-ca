@@ -4,15 +4,23 @@ This terraform module automates the creation of container app resources on the a
 
 ## Features
 
-- provides support for retrieval of container images from the registry using user-assigned identities
-- provides support for secrets to retrieve from a key vault backend scope
-- offers possibility to integrate the container app environment to your own vnet (vnet integration)
-- allows for ingress to be set to external (limited to container app environment), limited to the vnet or wide open
-- facilitates the use of custom domain names for your container apps
-- provides support for certificates for custom domain names
-- allows for multiple container apps to be deployed within a container app environment
-- enables multiple container app jobs
-- utilization of terratest for robust validation
+Provides support for retrieval of container images from the registry using user-assigned identities
+
+Provides support for secrets to retrieve from a key vault backend scope
+
+Offers possibility to integrate the container app environment to your own vnet (vnet integration)
+
+Allows for ingress to be set to external (limited to container app environment), limited to the vnet or wide open
+
+Facilitates the use of custom domain names for your container apps
+
+Provides support for certificates for custom domain names
+
+Allows for multiple container apps to be deployed within a container app environment
+
+Enables multiple container app jobs
+
+Utilization of terratest for robust validation
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
