@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.1.1...v4.2.0) (2026-03-11)
+
+
+### Features
+
+* **deps:** bump github.com/cloudnationhq/az-cn-go-validor in /tests ([#100](https://github.com/CloudNationHQ/terraform-azure-ca/issues/100)) ([f483441](https://github.com/CloudNationHQ/terraform-azure-ca/commit/f483441ee3f441428ee97b6a6817e8bf24f446f3))
+* **deps:** bump github.com/cloudnationhq/az-cn-go-validor in /tests ([#98](https://github.com/CloudNationHQ/terraform-azure-ca/issues/98)) ([6bc0f18](https://github.com/CloudNationHQ/terraform-azure-ca/commit/6bc0f18d234b50187403eab60a8d536748a62a1a))
+
+
+### Bug Fixes
+
+* **identity:** allow optional identity_ids for system-assigned identities in container apps ([#102](https://github.com/CloudNationHQ/terraform-azure-ca/issues/102)) ([8722562](https://github.com/CloudNationHQ/terraform-azure-ca/commit/87225621b9dc72ea1f2cce75e46cb84f3bebe3a3))
+
 ## [4.1.1](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.1.0...v4.1.1) (2026-01-23)
 
 
