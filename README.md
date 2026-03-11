@@ -270,7 +270,7 @@ object({
       })))
       identity = optional(object({
         type         = optional(string, "UserAssigned")
-        identity_ids = list(string)
+        identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
       certificates = optional(map(object({
@@ -400,7 +400,7 @@ object({
       })))
       identity = optional(object({
         type         = optional(string, "UserAssigned")
-        identity_ids = list(string)
+        identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
       manual_trigger_config = optional(object({
@@ -525,6 +525,9 @@ By using a user-assigned identity, this issue can be avoided. The deployment ord
 
 This way, the module ensures that all the necessary permissions are in place before the container app deployment. It is a smoother, first time right deployment and more reliable process that we strongly recommend for most use cases.
 See also [here](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity?tabs=portal%2Cdotnet#common-use-cases)
+
+**System-assigned identity support:**
+The module accepts `identity = { type = "SystemAssigned" }` for container apps and jobs without requiring `identity_ids`. For first-time deployments that depend on module-managed ACR or Key Vault role assignments, user-assigned identities remain the recommended approach.
 
 ## Contributors
 
