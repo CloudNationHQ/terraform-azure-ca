@@ -209,7 +209,7 @@ variable "environment" {
       })))
       identity = optional(object({
         type         = optional(string, "UserAssigned")
-        identity_ids = list(string)
+        identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
       certificates = optional(map(object({
@@ -339,7 +339,7 @@ variable "environment" {
       })))
       identity = optional(object({
         type         = optional(string, "UserAssigned")
-        identity_ids = list(string)
+        identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
       manual_trigger_config = optional(object({
