@@ -130,6 +130,7 @@ variable "environment" {
           name             = string
           custom_rule_type = string
           metadata         = map(string)
+          identity_id      = optional(string)
           authentication = optional(map(object({
             secret_name       = string
             trigger_parameter = string
@@ -357,6 +358,7 @@ variable "environment" {
             name             = optional(string)
             custom_rule_type = optional(string)
             metadata         = optional(map(string), {})
+            identity_id      = optional(string)
             authentication = optional(map(object({
               trigger_parameter = string
               secret_name       = string
