@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.3.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.2.0...v4.3.0) (2026-06-09)
+
+
+### Features
+
+* add identity_id to container app and job custom scale rule blocks ([#109](https://github.com/CloudNationHQ/terraform-azure-ca/issues/109)) ([47cbb42](https://github.com/CloudNationHQ/terraform-azure-ca/commit/47cbb42cf44b339671040b8f61834caf2e922677)), closes [#101](https://github.com/CloudNationHQ/terraform-azure-ca/issues/101)
+* **deps:** bump github.com/cloudnationhq/az-cn-go-validor in /tests ([#104](https://github.com/CloudNationHQ/terraform-azure-ca/issues/104)) ([28ab7d0](https://github.com/CloudNationHQ/terraform-azure-ca/commit/28ab7d05fbb353768b5cc1f597c59265a309ebb9))
+* **deps:** bump github.com/cloudnationhq/az-cn-go-validor in /tests ([#106](https://github.com/CloudNationHQ/terraform-azure-ca/issues/106)) ([c173584](https://github.com/CloudNationHQ/terraform-azure-ca/commit/c17358449846bb52e598ca3995441358b3115d08))
+
 ## [4.2.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.1.1...v4.2.0) (2026-03-11)
 
 
