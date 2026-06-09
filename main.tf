@@ -218,6 +218,7 @@ resource "azurerm_container_app" "ca" {
         name             = custom_scale_rule.value.name
         custom_rule_type = custom_scale_rule.value.custom_rule_type
         metadata         = custom_scale_rule.value.metadata
+        identity_id      = custom_scale_rule.value.identity_id
 
         dynamic "authentication" {
           for_each = custom_scale_rule.value.authentication != null ? custom_scale_rule.value.authentication : {}
@@ -658,6 +659,7 @@ resource "azurerm_container_app_job" "job" {
               name             = rules.value.name
               custom_rule_type = rules.value.custom_rule_type
               metadata         = rules.value.metadata
+              identity_id      = rules.value.identity_id
 
               dynamic "authentication" {
                 for_each = rules.value.authentication != null ? rules.value.authentication : {}
