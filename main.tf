@@ -1,12 +1,12 @@
-data "azurerm_container_app_environment" "existing" {
-  for_each = var.environment.use_existing ? { "cae" = var.environment } : {}
+data "azurerm_container_app_environment" "this" {
+  for_each = var.environment.use_existing ? { "this" = var.environment } : {}
 
   name                = each.value.name
   resource_group_name = coalesce(each.value.resource_group_name, var.resource_group_name)
 }
 
-resource "azurerm_container_app_environment" "cae" {
-  for_each = var.environment.use_existing ? {} : { "cae" = var.environment }
+resource "azurerm_container_app_environment" "this" {
+  for_each = var.environment.use_existing ? {} : { "this" = var.environment }
 
   name                                        = each.value.name
   location                                    = coalesce(each.value.location, var.location)
@@ -22,7 +22,7 @@ resource "azurerm_container_app_environment" "cae" {
   public_network_access                       = each.value.public_network_access
 
   dynamic "identity" {
-    for_each = each.value.identity != null ? { default = each.value.identity } : {}
+    for_each = each.value.identity != null ? { "this" = each.value.identity } : {}
     content {
       type         = identity.value.type
       identity_ids = identity.value.identity_ids
@@ -43,15 +43,15 @@ resource "azurerm_container_app_environment" "cae" {
 }
 
 locals {
-  environment_id = var.environment.use_existing ? data.azurerm_container_app_environment.existing["cae"].id : azurerm_container_app_environment.cae["cae"].id
+  environment_id = var.environment.use_existing ? data.azurerm_container_app_environment.this["this"].id : azurerm_container_app_environment.this["this"].id
 }
 
-resource "azurerm_container_app" "ca" {
+resource "azurerm_container_app" "this" {
   for_each = {
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : ca_key => ca
   }
 
-  name                         = coalesce(each.value.name, try("${var.naming.container_app}-${each.key}", each.key))
+  name                         = coalesce(each.value.name, each.key)
   container_app_environment_id = local.environment_id
   resource_group_name          = coalesce(each.value.resource_group_name, var.environment.resource_group_name, var.resource_group_name)
   revision_mode                = each.value.revision_mode
@@ -67,7 +67,7 @@ resource "azurerm_container_app" "ca" {
     polling_interval_in_seconds      = each.value.template.polling_interval_in_seconds
 
     dynamic "init_container" {
-      for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}
+      for_each = each.value.template.init_container != null ? { "this" = each.value.template.init_container } : {}
       content {
         name    = init_container.value.name
         image   = init_container.value.image
@@ -86,7 +86,7 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "volume_mounts" {
-          for_each = init_container.value.volume_mounts != null ? { default = init_container.value.volume_mounts } : {}
+          for_each = init_container.value.volume_mounts != null ? { "this" = init_container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
@@ -116,7 +116,7 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "volume_mounts" {
-          for_each = container.value.volume_mounts != null ? { default = container.value.volume_mounts } : {}
+          for_each = container.value.volume_mounts != null ? { "this" = container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
@@ -125,17 +125,16 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "liveness_probe" {
-          for_each = container.value.liveness_probe != null ? { default = container.value.liveness_probe } : {}
+          for_each = container.value.liveness_probe != null ? { "this" = container.value.liveness_probe } : {}
           content {
-            transport                        = liveness_probe.value.transport
-            port                             = liveness_probe.value.port
-            host                             = liveness_probe.value.host
-            failure_count_threshold          = liveness_probe.value.failure_count_threshold
-            initial_delay                    = liveness_probe.value.initial_delay
-            interval_seconds                 = liveness_probe.value.interval_seconds
-            path                             = liveness_probe.value.path
-            timeout                          = liveness_probe.value.timeout
-            termination_grace_period_seconds = liveness_probe.value.termination_grace_period_seconds
+            transport               = liveness_probe.value.transport
+            port                    = liveness_probe.value.port
+            host                    = liveness_probe.value.host
+            failure_count_threshold = liveness_probe.value.failure_count_threshold
+            initial_delay           = liveness_probe.value.initial_delay
+            interval_seconds        = liveness_probe.value.interval_seconds
+            path                    = liveness_probe.value.path
+            timeout                 = liveness_probe.value.timeout
 
             dynamic "header" {
               for_each = liveness_probe.value.header != null ? [1] : []
@@ -148,7 +147,7 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "readiness_probe" {
-          for_each = container.value.readiness_probe != null ? { default = container.value.readiness_probe } : {}
+          for_each = container.value.readiness_probe != null ? { "this" = container.value.readiness_probe } : {}
           content {
             transport               = readiness_probe.value.transport
             port                    = readiness_probe.value.port
@@ -171,17 +170,16 @@ resource "azurerm_container_app" "ca" {
         }
 
         dynamic "startup_probe" {
-          for_each = container.value.startup_probe != null ? { default = container.value.startup_probe } : {}
+          for_each = container.value.startup_probe != null ? { "this" = container.value.startup_probe } : {}
           content {
-            transport                        = startup_probe.value.transport
-            port                             = startup_probe.value.port
-            host                             = startup_probe.value.host
-            failure_count_threshold          = startup_probe.value.failure_count_threshold
-            initial_delay                    = startup_probe.value.initial_delay
-            interval_seconds                 = startup_probe.value.interval_seconds
-            path                             = startup_probe.value.path
-            timeout                          = startup_probe.value.timeout
-            termination_grace_period_seconds = startup_probe.value.termination_grace_period_seconds
+            transport               = startup_probe.value.transport
+            port                    = startup_probe.value.port
+            host                    = startup_probe.value.host
+            failure_count_threshold = startup_probe.value.failure_count_threshold
+            initial_delay           = startup_probe.value.initial_delay
+            interval_seconds        = startup_probe.value.interval_seconds
+            path                    = startup_probe.value.path
+            timeout                 = startup_probe.value.timeout
 
             dynamic "header" {
               for_each = startup_probe.value.header != null ? [1] : []
@@ -196,7 +194,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "azure_queue_scale_rule" {
-      for_each = each.value.template.azure_queue_scale_rule != null ? { default = each.value.template.azure_queue_scale_rule } : {}
+      for_each = each.value.template.azure_queue_scale_rule != null ? { "this" = each.value.template.azure_queue_scale_rule } : {}
       content {
         name         = azure_queue_scale_rule.value.name
         queue_name   = azure_queue_scale_rule.value.queue_name
@@ -213,7 +211,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "custom_scale_rule" {
-      for_each = each.value.template.custom_scale_rule != null ? { default = each.value.template.custom_scale_rule } : {}
+      for_each = each.value.template.custom_scale_rule != null ? { "this" = each.value.template.custom_scale_rule } : {}
       content {
         name             = custom_scale_rule.value.name
         custom_rule_type = custom_scale_rule.value.custom_rule_type
@@ -231,7 +229,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "http_scale_rule" {
-      for_each = each.value.template.http_scale_rule != null ? { default = each.value.template.http_scale_rule } : {}
+      for_each = each.value.template.http_scale_rule != null ? { "this" = each.value.template.http_scale_rule } : {}
       content {
         name                = http_scale_rule.value.name
         concurrent_requests = http_scale_rule.value.concurrent_requests
@@ -247,7 +245,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "tcp_scale_rule" {
-      for_each = each.value.template.tcp_scale_rule != null ? { default = each.value.template.tcp_scale_rule } : {}
+      for_each = each.value.template.tcp_scale_rule != null ? { "this" = each.value.template.tcp_scale_rule } : {}
       content {
         name                = tcp_scale_rule.value.name
         concurrent_requests = tcp_scale_rule.value.concurrent_requests
@@ -263,7 +261,7 @@ resource "azurerm_container_app" "ca" {
     }
 
     dynamic "volume" {
-      for_each = each.value.volume != null ? { default = each.value.volume } : {}
+      for_each = each.value.volume != null ? { "this" = each.value.volume } : {}
       content {
         name          = volume.value.name
         storage_name  = volume.value.storage_name
@@ -274,10 +272,10 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "ingress" {
-    for_each = each.value.ingress != null ? { default = each.value.ingress } : {}
+    for_each = each.value.ingress != null ? { "this" = each.value.ingress } : {}
 
     content {
-      allow_insecure_connections = ingress.value.allow_insecure_connections
+      allow_insecure_connections = try(ingress.value.allow_insecure_connections, false)
       external_enabled           = ingress.value.external_enabled
       fqdn                       = ingress.value.fqdn
       target_port                = ingress.value.target_port
@@ -299,7 +297,7 @@ resource "azurerm_container_app" "ca" {
 
       dynamic "ip_security_restriction" {
         ## The action types in an all ip_security_restriction blocks must be the same for the ingress, mixing Allow and Deny rules is not currently supported by the service.
-        for_each = ingress.value.ip_security_restriction != null ? { default = ingress.value.ip_security_restriction } : {}
+        for_each = ingress.value.ip_security_restriction != null ? { "this" = ingress.value.ip_security_restriction } : {}
         content {
           name             = ip_security_restriction.value.name
           description      = ip_security_restriction.value.description
@@ -309,7 +307,7 @@ resource "azurerm_container_app" "ca" {
       }
 
       dynamic "cors" {
-        for_each = ingress.value.cors != null ? { default = ingress.value.cors } : {}
+        for_each = ingress.value.cors != null ? { "this" = ingress.value.cors } : {}
         content {
           allowed_origins           = cors.value.allowed_origins
           allowed_methods           = cors.value.allowed_methods
@@ -323,7 +321,7 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "dapr" {
-    for_each = each.value.dapr != null ? { default = each.value.dapr } : {}
+    for_each = each.value.dapr != null ? { "this" = each.value.dapr } : {}
     content {
       app_id       = dapr.value.app_id
       app_port     = dapr.value.app_port
@@ -332,7 +330,7 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "registry" {
-    for_each = each.value.registry != null ? { default = each.value.registry } : {}
+    for_each = each.value.registry != null ? { "this" = each.value.registry } : {}
     content {
       server               = registry.value.server
       identity             = registry.value.identity_id
@@ -352,7 +350,7 @@ resource "azurerm_container_app" "ca" {
   }
 
   dynamic "identity" {
-    for_each = each.value.identity != null ? { default = each.value.identity } : {}
+    for_each = each.value.identity != null ? { "this" = each.value.identity } : {}
     content {
       type         = identity.value.type
       identity_ids = identity.value.identity_ids
@@ -362,7 +360,7 @@ resource "azurerm_container_app" "ca" {
 }
 
 # Role assignments for ACR pull access when using managed identity
-resource "azurerm_role_assignment" "role_acr_pull" {
+resource "azurerm_role_assignment" "acr_pull" {
   for_each = merge(
     {
       for ca_key, ca in lookup(var.environment, "container_apps", {}) : "ca-${ca_key}" => ca
@@ -380,7 +378,7 @@ resource "azurerm_role_assignment" "role_acr_pull" {
 }
 
 # Role assignments for Key Vault secret access when using managed identity
-resource "azurerm_role_assignment" "role_kv_secrets_user" {
+resource "azurerm_role_assignment" "kv_secrets_user" {
   for_each = merge(
     {
       for ca_key, ca in lookup(var.environment, "container_apps", {}) : "ca-${ca_key}" => ca
@@ -397,7 +395,7 @@ resource "azurerm_role_assignment" "role_kv_secrets_user" {
   principal_id         = each.value.identity.principal_id
 }
 
-resource "azurerm_container_app_environment_certificate" "certificate" {
+resource "azurerm_container_app_environment_certificate" "this" {
   for_each = merge([
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
       for cert_key, cert in lookup(ca, "certificates", {}) : "${ca_key}-${cert_key}" => {
@@ -417,7 +415,7 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
   certificate_password         = each.value.password
 
   dynamic "certificate_key_vault" {
-    for_each = each.value.certificate_key_vault != null ? { default = each.value.certificate_key_vault } : {}
+    for_each = each.value.certificate_key_vault != null ? { "this" = each.value.certificate_key_vault } : {}
 
     content {
       identity            = certificate_key_vault.value.identity
@@ -428,7 +426,7 @@ resource "azurerm_container_app_environment_certificate" "certificate" {
   tags = coalesce(var.environment.tags, var.tags)
 }
 
-resource "azurerm_container_app_custom_domain" "domain" {
+resource "azurerm_container_app_custom_domain" "this" {
   for_each = merge([
     for ca_key, ca in lookup(var.environment, "container_apps", {}) : {
       for cert_key, cert in lookup(ca, "certificates", {}) : "${ca_key}-${cert_key}" => {
@@ -440,17 +438,15 @@ resource "azurerm_container_app_custom_domain" "domain" {
   ]...)
 
   name                                     = trimprefix(each.value.fqdn, "asuid.")
-  container_app_id                         = azurerm_container_app.ca[each.value.ca_key].id
-  container_app_environment_certificate_id = azurerm_container_app_environment_certificate.certificate[each.key].id
+  container_app_id                         = azurerm_container_app.this[each.value.ca_key].id
+  container_app_environment_certificate_id = azurerm_container_app_environment_certificate.this[each.key].id
   certificate_binding_type                 = each.value.binding_type
 }
 
-
-
-resource "azurerm_container_app_job" "job" {
+resource "azurerm_container_app_job" "this" {
   for_each = { for job_key, job in lookup(var.environment, "jobs", {}) : job_key => job }
 
-  name                         = coalesce(each.value.name, try("${var.naming.container_app_job}-${each.key}", each.key))
+  name                         = coalesce(each.value.name, each.key)
   location                     = coalesce(each.value.location, var.environment.location, var.location)
   resource_group_name          = coalesce(each.value.resource_group_name, var.environment.resource_group_name, var.resource_group_name)
   container_app_environment_id = local.environment_id
@@ -461,7 +457,7 @@ resource "azurerm_container_app_job" "job" {
 
   template {
     dynamic "init_container" {
-      for_each = each.value.template.init_container != null ? { default = each.value.template.init_container } : {}
+      for_each = each.value.template.init_container != null ? { "this" = each.value.template.init_container } : {}
       content {
         name              = init_container.value.name
         image             = init_container.value.image
@@ -482,7 +478,7 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "volume_mounts" {
-          for_each = init_container.value.volume_mounts != null ? { default = init_container.value.volume_mounts } : {}
+          for_each = init_container.value.volume_mounts != null ? { "this" = init_container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
@@ -493,7 +489,7 @@ resource "azurerm_container_app_job" "job" {
     }
 
     dynamic "container" {
-      for_each = each.value.template.container != null ? { default = each.value.template.container } : {}
+      for_each = each.value.template.container != null ? { "this" = each.value.template.container } : {}
       content {
         name              = container.value.name
         image             = container.value.image
@@ -514,7 +510,7 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "volume_mounts" {
-          for_each = container.value.volume_mounts != null ? { default = container.value.volume_mounts } : {}
+          for_each = container.value.volume_mounts != null ? { "this" = container.value.volume_mounts } : {}
           content {
             name     = volume_mounts.value.name
             path     = volume_mounts.value.path
@@ -523,17 +519,16 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "liveness_probe" {
-          for_each = container.value.liveness_probe != null ? { default = container.value.liveness_probe } : {}
+          for_each = container.value.liveness_probe != null ? { "this" = container.value.liveness_probe } : {}
           content {
-            transport                        = liveness_probe.value.transport
-            port                             = liveness_probe.value.port
-            host                             = liveness_probe.value.host
-            failure_count_threshold          = liveness_probe.value.failure_count_threshold
-            initial_delay                    = liveness_probe.value.initial_delay
-            interval_seconds                 = liveness_probe.value.interval_seconds
-            path                             = liveness_probe.value.path
-            timeout                          = liveness_probe.value.timeout
-            termination_grace_period_seconds = liveness_probe.value.termination_grace_period_seconds
+            transport               = liveness_probe.value.transport
+            port                    = liveness_probe.value.port
+            host                    = liveness_probe.value.host
+            failure_count_threshold = liveness_probe.value.failure_count_threshold
+            initial_delay           = liveness_probe.value.initial_delay
+            interval_seconds        = liveness_probe.value.interval_seconds
+            path                    = liveness_probe.value.path
+            timeout                 = liveness_probe.value.timeout
 
             dynamic "header" {
               for_each = liveness_probe.value.header != null ? [1] : []
@@ -546,7 +541,7 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "readiness_probe" {
-          for_each = container.value.readiness_probe != null ? { default = container.value.readiness_probe } : {}
+          for_each = container.value.readiness_probe != null ? { "this" = container.value.readiness_probe } : {}
           content {
             transport               = readiness_probe.value.transport
             port                    = readiness_probe.value.port
@@ -569,17 +564,16 @@ resource "azurerm_container_app_job" "job" {
         }
 
         dynamic "startup_probe" {
-          for_each = container.value.startup_probe != null ? { default = container.value.startup_probe } : {}
+          for_each = container.value.startup_probe != null ? { "this" = container.value.startup_probe } : {}
           content {
-            transport                        = startup_probe.value.transport
-            port                             = startup_probe.value.port
-            host                             = startup_probe.value.host
-            initial_delay                    = startup_probe.value.initial_delay
-            failure_count_threshold          = startup_probe.value.failure_count_threshold
-            interval_seconds                 = startup_probe.value.interval_seconds
-            path                             = startup_probe.value.path
-            timeout                          = startup_probe.value.timeout
-            termination_grace_period_seconds = startup_probe.value.termination_grace_period_seconds
+            transport               = startup_probe.value.transport
+            port                    = startup_probe.value.port
+            host                    = startup_probe.value.host
+            initial_delay           = startup_probe.value.initial_delay
+            failure_count_threshold = startup_probe.value.failure_count_threshold
+            interval_seconds        = startup_probe.value.interval_seconds
+            path                    = startup_probe.value.path
+            timeout                 = startup_probe.value.timeout
 
             dynamic "header" {
               for_each = startup_probe.value.header != null ? [1] : []
@@ -594,7 +588,7 @@ resource "azurerm_container_app_job" "job" {
     }
 
     dynamic "volume" {
-      for_each = each.value.template.volume != null ? { default = each.value.template.volume } : {}
+      for_each = each.value.template.volume != null ? { "this" = each.value.template.volume } : {}
       content {
         name          = volume.value.name
         storage_type  = volume.value.storage_type
@@ -605,7 +599,7 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "registry" {
-    for_each = each.value.registry != null ? { default = each.value.registry } : {}
+    for_each = each.value.registry != null ? { "this" = each.value.registry } : {}
     content {
       server               = registry.value.server
       identity             = registry.value.identity_id
@@ -625,7 +619,7 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "identity" {
-    for_each = each.value.identity != null ? { default = each.value.identity } : {}
+    for_each = each.value.identity != null ? { "this" = each.value.identity } : {}
     content {
       type         = identity.value.type
       identity_ids = identity.value.identity_ids
@@ -633,7 +627,7 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "manual_trigger_config" {
-    for_each = each.value.manual_trigger_config != null ? { default = each.value.manual_trigger_config } : {}
+    for_each = each.value.manual_trigger_config != null ? { "this" = each.value.manual_trigger_config } : {}
     content {
       parallelism              = manual_trigger_config.value.parallelism
       replica_completion_count = manual_trigger_config.value.replica_completion_count
@@ -641,13 +635,13 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "event_trigger_config" {
-    for_each = each.value.event_trigger_config != null ? { default = each.value.event_trigger_config } : {}
+    for_each = each.value.event_trigger_config != null ? { "this" = each.value.event_trigger_config } : {}
     content {
       parallelism              = event_trigger_config.value.parallelism
       replica_completion_count = event_trigger_config.value.replica_completion_count
 
       dynamic "scale" {
-        for_each = event_trigger_config.value.scale != null ? { default = event_trigger_config.value.scale } : {}
+        for_each = event_trigger_config.value.scale != null ? { "this" = event_trigger_config.value.scale } : {}
         content {
           max_executions              = scale.value.max_executions
           min_executions              = scale.value.min_executions
@@ -676,7 +670,7 @@ resource "azurerm_container_app_job" "job" {
   }
 
   dynamic "schedule_trigger_config" {
-    for_each = each.value.schedule_trigger_config != null ? { default = each.value.schedule_trigger_config } : {}
+    for_each = each.value.schedule_trigger_config != null ? { "this" = each.value.schedule_trigger_config } : {}
     content {
       parallelism              = schedule_trigger_config.value.parallelism
       replica_completion_count = schedule_trigger_config.value.replica_completion_count

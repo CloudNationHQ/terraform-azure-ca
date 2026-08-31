@@ -7,7 +7,7 @@ module "naming" {
 
 module "rg" {
   source  = "cloudnationhq/rg/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   groups = {
     demo = {
@@ -19,9 +19,7 @@ module "rg" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 5.0"
 
   environment = {
     name                = module.naming.container_app_environment.name
@@ -30,10 +28,13 @@ module "ca" {
 
     container_apps = {
       app1 = {
+        revision_mode = "Single"
         template = {
           containers = {
             container1 = {
-              image = "nginx:latest"
+              image  = "nginx:latest"
+              cpu    = 0.25
+              memory = "0.5Gi"
             }
           }
         }

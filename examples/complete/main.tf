@@ -7,7 +7,7 @@ module "naming" {
 
 module "rg" {
   source  = "cloudnationhq/rg/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   groups = {
     demo = {
@@ -19,9 +19,7 @@ module "rg" {
 
 module "kv" {
   source  = "cloudnationhq/kv/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 6.0"
 
   vault = {
     name                = module.naming.key_vault.name_unique
@@ -45,9 +43,7 @@ module "kv" {
 
 module "vnet" {
   source  = "cloudnationhq/vnet/azure"
-  version = "~> 9.0"
-
-  naming = local.naming
+  version = "~> 10.0"
 
   vnet = {
     name                = module.naming.virtual_network.name
@@ -56,14 +52,14 @@ module "vnet" {
     address_space       = ["10.19.0.0/16"]
 
     subnets = {
-      cae = {
+      environment = {
         address_prefixes       = ["10.19.1.0/24"]
         service_endpoints      = ["Microsoft.KeyVault", "Microsoft.Storage"]
         default_outbound       = true
         private_link_endpoints = true
 
         delegations = {
-          cae = {
+          environment = {
             name = "Microsoft.App/environments"
             actions = [
               "Microsoft.Network/virtualNetworks/subnets/join/action",
@@ -77,7 +73,7 @@ module "vnet" {
 
 module "law" {
   source  = "cloudnationhq/law/azure"
-  version = "~> 3.0"
+  version = "~> 4.0"
 
   workspace = {
     name                = module.naming.log_analytics_workspace.name_unique
@@ -141,9 +137,9 @@ module "tasks" {
 
 module "uai" {
   source  = "cloudnationhq/uai/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
-  config = {
+  identity = {
     name                = "${module.naming.user_assigned_identity.name}-app2"
     location            = module.rg.groups.demo.location
     resource_group_name = module.rg.groups.demo.name
@@ -152,9 +148,7 @@ module "uai" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 5.0"
 
   environment = {
     name                           = module.naming.container_app_environment.name
@@ -193,7 +187,9 @@ module "ca" {
 
           containers = {
             container1 = {
-              image = "nginx:latest"
+              image  = "nginx:latest"
+              cpu    = 0.25
+              memory = "0.5Gi"
               env = {
                 ALLOWED_HOSTS = {
                   value = "*"
@@ -236,8 +232,8 @@ module "ca" {
 
         identity = {
           type         = "UserAssigned"
-          identity_ids = [module.uai.config.id]
-          principal_id = module.uai.config.principal_id
+          identity_ids = [module.uai.identity.id]
+          principal_id = module.uai.identity.principal_id
         }
 
         template = {
@@ -247,7 +243,9 @@ module "ca" {
 
           containers = {
             container1 = {
-              image = "${module.acr.registry.login_server}/hello-world:latest"
+              image  = "${module.acr.registry.login_server}/hello-world:latest"
+              cpu    = 0.25
+              memory = "0.5Gi"
               env = {
                 ALLOWED_HOSTS = {
                   value = "*"
@@ -284,7 +282,7 @@ module "ca" {
         registry = {
           server      = module.acr.registry.login_server
           scope       = module.acr.registry.id
-          identity_id = module.uai.config.id
+          identity_id = module.uai.identity.id
         }
       }
 
@@ -296,8 +294,8 @@ module "ca" {
 
         identity = {
           type         = "UserAssigned"
-          identity_ids = [module.uai.config.id]
-          principal_id = module.uai.config.principal_id
+          identity_ids = [module.uai.identity.id]
+          principal_id = module.uai.identity.principal_id
         }
 
         template = {
@@ -307,7 +305,9 @@ module "ca" {
 
           containers = {
             container1 = {
-              image = "${module.acr.registry.login_server}/hello-world:latest"
+              image  = "${module.acr.registry.login_server}/hello-world:latest"
+              cpu    = 0.25
+              memory = "0.5Gi"
               env = {
                 ALLOWED_HOSTS = {
                   value = "*"
@@ -329,11 +329,11 @@ module "ca" {
         secrets = {
           secret-key1 = {
             key_vault_secret_id = module.kv.secrets.secret1.versionless_id
-            identity_id         = module.uai.config.id
+            identity_id         = module.uai.identity.id
           }
           secret-key2 = {
             key_vault_secret_id = module.kv.secrets.secret2.versionless_id
-            identity_id         = module.uai.config.id
+            identity_id         = module.uai.identity.id
           }
         }
 
@@ -352,7 +352,7 @@ module "ca" {
         registry = {
           server      = module.acr.registry.login_server
           scope       = module.acr.registry.id
-          identity_id = module.uai.config.id
+          identity_id = module.uai.identity.id
         }
       }
     }

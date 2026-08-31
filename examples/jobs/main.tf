@@ -7,7 +7,7 @@ module "naming" {
 
 module "rg" {
   source  = "cloudnationhq/rg/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   groups = {
     demo = {
@@ -19,9 +19,7 @@ module "rg" {
 
 module "kv" {
   source  = "cloudnationhq/kv/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 6.0"
 
   vault = {
     name                = module.naming.key_vault.name_unique
@@ -57,14 +55,14 @@ module "acr" {
 
 module "uai" {
   source  = "cloudnationhq/uai/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   for_each = {
     job1 = "${module.naming.user_assigned_identity.name}-job1"
     job2 = "${module.naming.user_assigned_identity.name}-job2"
   }
 
-  config = {
+  identity = {
     name                = each.value
     location            = module.rg.groups.demo.location
     resource_group_name = module.rg.groups.demo.name
@@ -73,9 +71,7 @@ module "uai" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 5.0"
 
   environment = {
     name                = module.naming.container_app_environment.name

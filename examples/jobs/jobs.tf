@@ -6,8 +6,10 @@ locals {
 
       template = {
         container = {
-          name  = "container1"
-          image = "nginx:latest"
+          name   = "container1"
+          image  = "nginx:latest"
+          cpu    = 0.25
+          memory = "0.5Gi"
           env = {
             ALLOWED_HOSTS = {
               value = "*"
@@ -43,20 +45,20 @@ locals {
       secrets = {
         personal-access-token = {
           key_vault_secret_id = module.kv.secrets.secret1.versionless_id
-          identity_id         = module.uai["job1"].config.id
+          identity_id         = module.uai["job1"].identity.id
         }
       }
 
       registry = {
         server      = module.acr.registry.login_server
-        identity_id = module.uai["job1"].config.id
+        identity_id = module.uai["job1"].identity.id
         scope       = module.acr.registry.id
       }
 
       identity = {
         type         = "UserAssigned"
-        identity_ids = [module.uai["job1"].config.id]
-        principal_id = module.uai["job1"].config.principal_id
+        identity_ids = [module.uai["job1"].identity.id]
+        principal_id = module.uai["job1"].identity.principal_id
       }
     }
     job2 = {
@@ -65,8 +67,10 @@ locals {
 
       template = {
         container = {
-          name  = "container2"
-          image = "nginx:latest"
+          name   = "container2"
+          image  = "nginx:latest"
+          cpu    = 0.25
+          memory = "0.5Gi"
           env = {
             ALLOWED_HOSTS = {
               value = "*"
@@ -87,20 +91,20 @@ locals {
       secrets = {
         secret-key = {
           key_vault_secret_id = module.kv.secrets.secret1.versionless_id
-          identity_id         = module.uai["job2"].config.id
+          identity_id         = module.uai["job2"].identity.id
         }
       }
 
       registry = {
         server      = module.acr.registry.login_server
-        identity_id = module.uai["job2"].config.id
+        identity_id = module.uai["job2"].identity.id
         scope       = module.acr.registry.id
       }
 
       identity = {
         type         = "UserAssigned"
-        identity_ids = [module.uai["job2"].config.id]
-        principal_id = module.uai["job2"].config.principal_id
+        identity_ids = [module.uai["job2"].identity.id]
+        principal_id = module.uai["job2"].identity.principal_id
       }
     }
   }

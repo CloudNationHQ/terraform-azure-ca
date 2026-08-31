@@ -4,7 +4,7 @@ variable "environment" {
     name                                        = string
     location                                    = optional(string)
     resource_group_name                         = optional(string)
-    use_existing                                = optional(bool, false)
+    use_existing                                = optional(bool)
     dapr_application_insights_connection_string = optional(string)
     infrastructure_subnet_id                    = optional(string)
     infrastructure_resource_group_name          = optional(string)
@@ -13,7 +13,7 @@ variable "environment" {
     public_network_access                       = optional(string)
     log_analytics_workspace_id                  = optional(string)
     logs_destination                            = optional(string)
-    mutual_tls_enabled                          = optional(bool, false)
+    mutual_tls_enabled                          = optional(bool)
     tags                                        = optional(map(string))
     identity = optional(object({
       type         = string
@@ -28,13 +28,13 @@ variable "environment" {
     container_apps = optional(map(object({
       name                   = optional(string)
       resource_group_name    = optional(string)
-      revision_mode          = optional(string, "Single")
+      revision_mode          = string
       workload_profile_name  = optional(string)
       max_inactive_revisions = optional(number)
       tags                   = optional(map(string))
       template = object({
-        min_replicas                     = optional(number, 1)
-        max_replicas                     = optional(number, 1)
+        min_replicas                     = optional(number)
+        max_replicas                     = optional(number)
         revision_suffix                  = optional(string)
         termination_grace_period_seconds = optional(number)
         cooldown_period_in_seconds       = optional(number)
@@ -42,8 +42,8 @@ variable "environment" {
         init_container = optional(object({
           name    = string
           image   = string
-          cpu     = optional(number, 0.25)
-          memory  = optional(string, "0.5Gi")
+          cpu     = optional(number)
+          memory  = optional(string)
           command = optional(list(string), [])
           args    = optional(list(string), [])
           env = optional(map(object({
@@ -58,8 +58,8 @@ variable "environment" {
         }))
         containers = map(object({
           image   = string
-          cpu     = optional(number, 0.25)
-          memory  = optional(string, "0.5Gi")
+          cpu     = number
+          memory  = string
           command = optional(list(string))
           args    = optional(list(string))
           env = optional(map(object({
@@ -72,45 +72,43 @@ variable "environment" {
             sub_path = optional(string)
           }))
           liveness_probe = optional(object({
-            transport                        = optional(string, "HTTPS")
-            port                             = number
-            host                             = optional(string)
-            failure_count_threshold          = optional(number, 3)
-            initial_delay                    = optional(number, 30)
-            interval_seconds                 = optional(number, 10)
-            path                             = optional(string, "/")
-            timeout                          = optional(number, 1)
-            termination_grace_period_seconds = optional(number)
+            transport               = string
+            port                    = number
+            host                    = optional(string)
+            failure_count_threshold = optional(number)
+            initial_delay           = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
             }))
           }))
           readiness_probe = optional(object({
-            transport               = optional(string, "HTTPS")
+            transport               = string
             port                    = number
             host                    = optional(string)
-            initial_delay           = optional(number, 0)
-            failure_count_threshold = optional(number, 3)
-            success_count_threshold = optional(number, 3)
-            interval_seconds        = optional(number, 10)
-            path                    = optional(string, "/")
-            timeout                 = optional(number, 1)
+            initial_delay           = optional(number)
+            failure_count_threshold = optional(number)
+            success_count_threshold = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
             }))
           }))
           startup_probe = optional(object({
-            transport                        = optional(string, "HTTPS")
-            port                             = number
-            host                             = optional(string)
-            failure_count_threshold          = optional(number, 3)
-            initial_delay                    = optional(number, 0)
-            interval_seconds                 = optional(number, 10)
-            path                             = optional(string, "/")
-            timeout                          = optional(number, 1)
-            termination_grace_period_seconds = optional(number)
+            transport               = string
+            port                    = number
+            host                    = optional(string)
+            failure_count_threshold = optional(number)
+            initial_delay           = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
@@ -160,17 +158,17 @@ variable "environment" {
         mount_options = optional(string)
       }))
       ingress = optional(object({
-        allow_insecure_connections = optional(bool, false)
-        external_enabled           = optional(bool, false)
+        allow_insecure_connections = optional(bool)
+        external_enabled           = optional(bool)
         fqdn                       = optional(string)
         target_port                = number
         exposed_port               = optional(number)
-        transport                  = optional(string, "auto")
+        transport                  = optional(string)
         client_certificate_mode    = optional(string)
         traffic_weight = optional(map(object({
           label           = optional(string)
-          latest_revision = optional(bool, true)
-          percentage      = optional(number, 100)
+          latest_revision = optional(bool)
+          percentage      = number
           revision_suffix = optional(string)
         })), {})
         ip_security_restriction = optional(object({
@@ -185,13 +183,13 @@ variable "environment" {
           allowed_headers           = optional(set(string))
           exposed_headers           = optional(set(string))
           max_age_in_seconds        = optional(number)
-          allow_credentials_enabled = optional(bool, false)
+          allow_credentials_enabled = optional(bool)
         }))
       }))
       dapr = optional(object({
         app_id       = string
         app_port     = optional(number)
-        app_protocol = optional(string, "http")
+        app_protocol = optional(string)
       }))
       registry = optional(object({
         server                  = string
@@ -199,17 +197,17 @@ variable "environment" {
         username                = optional(string)
         password_secret_name    = optional(string)
         scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        role_assignment_enabled = optional(bool)
       }))
       key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
+      key_vault_role_assignment_enabled = optional(bool)
       secrets = optional(map(object({
         value               = optional(string)
         identity_id         = optional(string)
         key_vault_secret_id = optional(string)
       })))
       identity = optional(object({
-        type         = optional(string, "UserAssigned")
+        type         = string
         identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
@@ -218,7 +216,7 @@ variable "environment" {
         binding_type     = optional(string)
         name             = optional(string)
         path             = optional(string)
-        password         = optional(string, "")
+        password         = optional(string)
         certificate_path = optional(string)
         key_vault_certificate = optional(object({
           identity            = optional(string)
@@ -238,8 +236,8 @@ variable "environment" {
         init_container = optional(object({
           name              = string
           image             = string
-          cpu               = optional(number, 0.25)
-          memory            = optional(string, "0.5Gi")
+          cpu               = optional(number)
+          memory            = optional(string)
           command           = optional(list(string), [])
           args              = optional(list(string), [])
           ephemeral_storage = optional(string)
@@ -256,8 +254,8 @@ variable "environment" {
         container = optional(object({
           name              = string
           image             = string
-          cpu               = optional(number, 0.25)
-          memory            = optional(string, "0.5Gi")
+          cpu               = number
+          memory            = string
           command           = optional(list(string))
           args              = optional(list(string))
           ephemeral_storage = optional(string)
@@ -271,45 +269,43 @@ variable "environment" {
             sub_path = optional(string)
           }))
           liveness_probe = optional(object({
-            transport                        = optional(string, "HTTPS")
-            port                             = number
-            host                             = optional(string)
-            failure_count_threshold          = optional(number, 3)
-            initial_delay                    = optional(number, 30)
-            interval_seconds                 = optional(number, 10)
-            path                             = optional(string, "/")
-            timeout                          = optional(number, 1)
-            termination_grace_period_seconds = optional(number)
+            transport               = string
+            port                    = number
+            host                    = optional(string)
+            failure_count_threshold = optional(number)
+            initial_delay           = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
             }))
           }))
           readiness_probe = optional(object({
-            transport               = optional(string, "HTTPS")
+            transport               = string
             port                    = number
             host                    = optional(string)
-            initial_delay           = optional(number, 0)
-            failure_count_threshold = optional(number, 3)
-            success_count_threshold = optional(number, 3)
-            interval_seconds        = optional(number, 10)
-            path                    = optional(string, "/")
-            timeout                 = optional(number, 1)
+            initial_delay           = optional(number)
+            failure_count_threshold = optional(number)
+            success_count_threshold = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
             }))
           }))
           startup_probe = optional(object({
-            transport                        = optional(string, "HTTPS")
-            port                             = number
-            host                             = optional(string)
-            initial_delay                    = optional(number, 0)
-            failure_count_threshold          = optional(number, 3)
-            interval_seconds                 = optional(number, 10)
-            path                             = optional(string, "/")
-            timeout                          = optional(number, 1)
-            termination_grace_period_seconds = optional(number)
+            transport               = string
+            port                    = number
+            host                    = optional(string)
+            initial_delay           = optional(number)
+            failure_count_threshold = optional(number)
+            interval_seconds        = optional(number)
+            path                    = optional(string)
+            timeout                 = optional(number)
             header = optional(object({
               name  = string
               value = string
@@ -329,17 +325,17 @@ variable "environment" {
         username                = optional(string)
         password_secret_name    = optional(string)
         scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        role_assignment_enabled = optional(bool)
       }))
       key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
+      key_vault_role_assignment_enabled = optional(bool)
       secrets = optional(map(object({
         value               = optional(string)
         identity_id         = optional(string)
         key_vault_secret_id = optional(string)
       })))
       identity = optional(object({
-        type         = optional(string, "UserAssigned")
+        type         = string
         identity_ids = optional(list(string))
         principal_id = optional(string)
       }))
@@ -375,20 +371,14 @@ variable "environment" {
   })
 
   validation {
-    condition     = var.environment.location != null || var.location != null
-    error_message = "location must be provided either in the environment object or as a separate variable."
+    condition     = lookup(var.environment, "location", null) != null || var.location != null
+    error_message = "location must be set on var.environment.location or on the module-level var.location."
   }
 
   validation {
-    condition     = var.environment.resource_group_name != null || var.resource_group_name != null
-    error_message = "resource group name must be provided either in the environment object or as a separate variable."
+    condition     = lookup(var.environment, "resource_group_name", null) != null || var.resource_group_name != null
+    error_message = "resource_group_name must be set on var.environment.resource_group_name or on the module-level var.resource_group_name."
   }
-}
-
-variable "naming" {
-  description = "contains naming convention"
-  type        = map(string)
-  default     = {}
 }
 
 variable "location" {
