@@ -1,13 +1,13 @@
 module "naming" {
   source  = "cloudnationhq/naming/azure"
-  version = "~> 0.26"
+  version = "~> 0.32"
 
   suffix = ["demo", "dev"]
 }
 
 module "rg" {
   source  = "cloudnationhq/rg/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   groups = {
     demo = {
@@ -19,9 +19,8 @@ module "rg" {
 
 module "kv" {
   source  = "cloudnationhq/kv/azure"
-  version = "~> 4.0"
+  version = "~> 6.0"
 
-  naming = local.naming
 
   vault = {
     name                = module.naming.key_vault.name_unique
@@ -41,9 +40,7 @@ module "kv" {
 
 module "acr" {
   source  = "cloudnationhq/acr/azure"
-  version = "~> 5.0"
-
-  naming = local.naming
+  version = "~> 6.0"
 
   registry = {
     name                          = module.naming.container_registry.name_unique
@@ -57,15 +54,10 @@ module "acr" {
 
 module "uai" {
   source  = "cloudnationhq/uai/azure"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
-  for_each = {
-    job1 = "${module.naming.user_assigned_identity.name}-job1"
-    job2 = "${module.naming.user_assigned_identity.name}-job2"
-  }
-
-  config = {
-    name                = each.value
+  identity = {
+    name                = module.naming.user_assigned_identity.name
     location            = module.rg.groups.demo.location
     resource_group_name = module.rg.groups.demo.name
   }
@@ -73,15 +65,132 @@ module "uai" {
 
 module "ca" {
   source  = "cloudnationhq/ca/azure"
-  version = "~> 4.0"
-
-  naming = local.naming
+  version = "~> 5.0"
 
   environment = {
     name                = module.naming.container_app_environment.name
     location            = module.rg.groups.demo.location
     resource_group_name = module.rg.groups.demo.name
 
-    jobs = local.jobs
+    role_assignments = {
+      acr-pull = {
+        scope                = module.acr.registry.id
+        role_definition_name = "AcrPull"
+        principal_id         = module.uai.identity.principal_id
+      }
+      kv-secrets = {
+        scope                = module.kv.vault.id
+        role_definition_name = "Key Vault Secrets User"
+        principal_id         = module.uai.identity.principal_id
+      }
+    }
+
+    jobs = {
+      job1 = {
+        replica_timeout_in_seconds = 300
+
+        template = {
+          containers = {
+            container1 = {
+              image = "nginx:latest"
+              env = {
+                ALLOWED_HOSTS = {
+                  value = "*"
+                }
+                SECRET_KEY = {
+                  secret_name = "personal-access-token"
+                }
+              }
+            }
+          }
+        }
+
+        event_trigger_config = {
+          scale = {
+            rules = {
+              rule1 = {
+                custom_rule_type = "github-runner"
+                metadata = {
+                  githubAPIURL              = "https://api.github.com"
+                  runnerScope               = "repo"
+                  targetWorkflowQueueLength = "1"
+                }
+                authentication = {
+                  auth1 = {
+                    secret_name       = "personal-access-token"
+                    trigger_parameter = "personalAccessToken"
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        secrets = {
+          personal-access-token = {
+            key_vault_secret_id = module.kv.secrets.secret1.versionless_id
+            identity            = module.uai.identity.id
+          }
+        }
+
+        registries = {
+          acr = {
+            server   = module.acr.registry.login_server
+            identity = module.uai.identity.id
+          }
+        }
+
+        identity = {
+          type         = "UserAssigned"
+          identity_ids = [module.uai.identity.id]
+          principal_id = module.uai.identity.principal_id
+        }
+      }
+
+      job2 = {
+        replica_timeout_in_seconds = 300
+
+        template = {
+          containers = {
+            container2 = {
+              image = "nginx:latest"
+              env = {
+                ALLOWED_HOSTS = {
+                  value = "*"
+                }
+                SECRET_KEY = {
+                  secret_name = "secret-key"
+                }
+              }
+            }
+          }
+        }
+
+        schedule_trigger_config = {
+          cron_expression          = "0 0 * * *"
+          parallelism              = 4
+          replica_completion_count = 2
+        }
+        secrets = {
+          secret-key = {
+            key_vault_secret_id = module.kv.secrets.secret1.versionless_id
+            identity            = module.uai.identity.id
+          }
+        }
+
+        registries = {
+          acr = {
+            server   = module.acr.registry.login_server
+            identity = module.uai.identity.id
+          }
+        }
+
+        identity = {
+          type         = "UserAssigned"
+          identity_ids = [module.uai.identity.id]
+          principal_id = module.uai.identity.principal_id
+        }
+      }
+    }
   }
 }
