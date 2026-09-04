@@ -28,9 +28,14 @@ module "ca" {
 
     container_apps = {
       app1 = {
+        revision_mode          = "Multiple"
+        max_inactive_revisions = 5
+
         template = {
+          revision_suffix = "v1"
+
           containers = {
-            container1 = {
+            frontend = {
               image = "nginx:latest"
             }
           }
@@ -39,9 +44,36 @@ module "ca" {
         ingress = {
           external_enabled = true
           target_port      = 80
+
           traffic_weight = {
-            default = {
-              percentage = 100
+            v1 = {
+              latest_revision = false
+              revision_suffix = "v1"
+              percentage      = 100
+            }
+          }
+        }
+      }
+
+      app2 = {
+        revision_mode = "Single"
+
+        template = {
+          containers = {
+            frontend = {
+              image = "nginx:latest"
+            }
+          }
+        }
+
+        ingress = {
+          external_enabled = true
+          target_port      = 80
+
+          traffic_weight = {
+            latest = {
+              latest_revision = true
+              percentage      = 100
             }
           }
         }
