@@ -403,11 +403,19 @@ resource "azurerm_container_app" "this" {
 }
 
 resource "azurerm_role_assignment" "this" {
-  for_each = local.role_assignments
+  for_each = var.environment.role_assignments
 
-  scope                = each.value.scope
-  role_definition_name = each.value.role_definition
-  principal_id         = each.value.principal_id
+  name                                   = each.value.name
+  scope                                  = each.value.scope
+  principal_id                           = each.value.principal_id
+  role_definition_name                   = each.value.role_definition_name
+  role_definition_id                     = each.value.role_definition_id
+  description                            = each.value.description
+  principal_type                         = each.value.principal_type
+  condition                              = each.value.condition
+  condition_version                      = each.value.condition_version
+  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
+  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
 
 resource "azurerm_container_app_environment_certificate" "this" {
@@ -735,53 +743,5 @@ resource "azurerm_container_app_job" "this" {
 
   tags = coalesce(
     each.value.tags, var.tags
-  )
-}
-
-locals {
-  workloads = merge(
-    {
-      for ca_key, ca in var.environment.container_apps : "ca-${ca_key}" => {
-        identity                          = ca.identity
-        registries                        = ca.registries
-        secrets                           = ca.secrets
-        key_vault_scope                   = ca.key_vault_scope
-        key_vault_role_assignment_enabled = ca.key_vault_role_assignment_enabled
-      }
-    },
-    {
-      for job_key, job in var.environment.jobs : "job-${job_key}" => {
-        identity                          = job.identity
-        registries                        = job.registries
-        secrets                           = job.secrets
-        key_vault_scope                   = job.key_vault_scope
-        key_vault_role_assignment_enabled = job.key_vault_role_assignment_enabled
-      }
-    }
-  )
-
-  role_assignments = merge(
-    {
-      for pair in flatten([
-        for wl_key, wl in local.workloads : [
-          for reg_key, reg in wl.registries : {
-            key          = "acr-${wl_key}-${reg_key}"
-            scope        = reg.scope
-            principal_id = wl.identity.principal_id
-          } if wl.identity != null && reg.role_assignment_enabled
-        ]
-        ]) : pair.key => {
-        scope           = pair.scope
-        role_definition = "AcrPull"
-        principal_id    = pair.principal_id
-      }
-    },
-    {
-      for wl_key, wl in local.workloads : "kv-${wl_key}" => {
-        scope           = wl.key_vault_scope
-        role_definition = "Key Vault Secrets User"
-        principal_id    = wl.identity.principal_id
-      } if wl.identity != null && length(wl.secrets) > 0 && wl.key_vault_role_assignment_enabled
-    }
   )
 }

@@ -25,6 +25,19 @@ variable "environment" {
       maximum_count         = number
       minimum_count         = number
     })), {})
+    role_assignments = optional(map(object({
+      scope                                  = string
+      principal_id                           = string
+      name                                   = optional(string)
+      role_definition_name                   = optional(string)
+      role_definition_id                     = optional(string)
+      description                            = optional(string)
+      principal_type                         = optional(string)
+      condition                              = optional(string)
+      condition_version                      = optional(string)
+      delegated_managed_identity_resource_id = optional(string)
+      skip_service_principal_aad_check       = optional(bool)
+    })), {})
     container_apps = optional(map(object({
       name                   = optional(string)
       resource_group_name    = optional(string)
@@ -180,15 +193,11 @@ variable "environment" {
         app_protocol = optional(string)
       }))
       registries = optional(map(object({
-        server                  = string
-        identity                = optional(string)
-        username                = optional(string)
-        password_secret_name    = optional(string)
-        scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        server               = string
+        identity             = optional(string)
+        username             = optional(string)
+        password_secret_name = optional(string)
       })), {})
-      key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
       secrets = optional(map(object({
         value               = optional(string)
         identity            = optional(string)
@@ -299,15 +308,11 @@ variable "environment" {
         })), {})
       })
       registries = optional(map(object({
-        server                  = string
-        identity                = optional(string)
-        username                = optional(string)
-        password_secret_name    = optional(string)
-        scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        server               = string
+        identity             = optional(string)
+        username             = optional(string)
+        password_secret_name = optional(string)
       })), {})
-      key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
       secrets = optional(map(object({
         value               = optional(string)
         identity            = optional(string)
@@ -356,36 +361,6 @@ variable "environment" {
   validation {
     condition     = var.environment.resource_group_name != null || var.resource_group_name != null
     error_message = "resource group name must be provided either in the environment object or as a separate variable."
-  }
-
-  validation {
-    condition = alltrue(concat(
-      [
-        for ca in var.environment.container_apps : alltrue([
-          for reg in ca.registries : reg.scope != null if reg.role_assignment_enabled
-        ])
-      ],
-      [
-        for job in var.environment.jobs : alltrue([
-          for reg in job.registries : reg.scope != null if reg.role_assignment_enabled
-        ])
-      ]
-    ))
-    error_message = "registries entries with role_assignment_enabled must set scope to the container registry id, or disable role_assignment_enabled."
-  }
-
-  validation {
-    condition = alltrue(concat(
-      [
-        for ca in var.environment.container_apps :
-        ca.key_vault_scope != null if ca.key_vault_role_assignment_enabled && length(ca.secrets) > 0 && ca.identity != null
-      ],
-      [
-        for job in var.environment.jobs :
-        job.key_vault_scope != null if job.key_vault_role_assignment_enabled && length(job.secrets) > 0 && job.identity != null
-      ]
-    ))
-    error_message = "container apps and jobs with secrets and an identity must set key_vault_scope to the key vault id, or disable key_vault_role_assignment_enabled."
   }
 }
 

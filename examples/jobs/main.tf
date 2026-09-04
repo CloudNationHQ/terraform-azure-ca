@@ -72,10 +72,22 @@ module "ca" {
     location            = module.rg.groups.demo.location
     resource_group_name = module.rg.groups.demo.name
 
+    role_assignments = {
+      acr-pull = {
+        scope                = module.acr.registry.id
+        role_definition_name = "AcrPull"
+        principal_id         = module.uai.identity.principal_id
+      }
+      kv-secrets = {
+        scope                = module.kv.vault.id
+        role_definition_name = "Key Vault Secrets User"
+        principal_id         = module.uai.identity.principal_id
+      }
+    }
+
     jobs = {
       job1 = {
         replica_timeout_in_seconds = 300
-        key_vault_scope            = module.kv.vault.id
 
         template = {
           containers = {
@@ -125,7 +137,6 @@ module "ca" {
           acr = {
             server   = module.acr.registry.login_server
             identity = module.uai.identity.id
-            scope    = module.acr.registry.id
           }
         }
 
@@ -138,7 +149,6 @@ module "ca" {
 
       job2 = {
         replica_timeout_in_seconds = 300
-        key_vault_scope            = module.kv.vault.id
 
         template = {
           containers = {
@@ -161,9 +171,6 @@ module "ca" {
           parallelism              = 4
           replica_completion_count = 2
         }
-
-        key_vault_role_assignment_enabled = false
-
         secrets = {
           secret-key = {
             key_vault_secret_id = module.kv.secrets.secret1.versionless_id
@@ -173,9 +180,8 @@ module "ca" {
 
         registries = {
           acr = {
-            server                  = module.acr.registry.login_server
-            identity                = module.uai.identity.id
-            role_assignment_enabled = false
+            server   = module.acr.registry.login_server
+            identity = module.uai.identity.id
           }
         }
 

@@ -85,6 +85,19 @@ object({
       maximum_count         = number
       minimum_count         = number
     })), {})
+    role_assignments = optional(map(object({
+      scope                                  = string
+      principal_id                           = string
+      name                                   = optional(string)
+      role_definition_name                   = optional(string)
+      role_definition_id                     = optional(string)
+      description                            = optional(string)
+      principal_type                         = optional(string)
+      condition                              = optional(string)
+      condition_version                      = optional(string)
+      delegated_managed_identity_resource_id = optional(string)
+      skip_service_principal_aad_check       = optional(bool)
+    })), {})
     container_apps = optional(map(object({
       name                   = optional(string)
       resource_group_name    = optional(string)
@@ -240,15 +253,11 @@ object({
         app_protocol = optional(string)
       }))
       registries = optional(map(object({
-        server                  = string
-        identity                = optional(string)
-        username                = optional(string)
-        password_secret_name    = optional(string)
-        scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        server               = string
+        identity             = optional(string)
+        username             = optional(string)
+        password_secret_name = optional(string)
       })), {})
-      key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
       secrets = optional(map(object({
         value               = optional(string)
         identity            = optional(string)
@@ -359,15 +368,11 @@ object({
         })), {})
       })
       registries = optional(map(object({
-        server                  = string
-        identity                = optional(string)
-        username                = optional(string)
-        password_secret_name    = optional(string)
-        scope                   = optional(string)
-        role_assignment_enabled = optional(bool, true)
+        server               = string
+        identity             = optional(string)
+        username             = optional(string)
+        password_secret_name = optional(string)
       })), {})
-      key_vault_scope                   = optional(string)
-      key_vault_role_assignment_enabled = optional(bool, true)
       secrets = optional(map(object({
         value               = optional(string)
         identity            = optional(string)
