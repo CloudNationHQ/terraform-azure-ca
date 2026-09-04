@@ -483,24 +483,6 @@ Full examples detailing all usages, along with integrations with dependency modu
 
 To update the module's documentation run `make doc`
 
-**Recommended Identity for Image Retrieval from Azure Container Registry (ACR):**
-While it's technically possible to use a system-assigned identity for pulling images from an Azure Container Registry (ACR), we strongly recommend using user-assigned identities. Here's why:
-
-The system-assigned identity requires 'AcrPull' permissions on the registry. However, you cannot assign this role until after the resource (in this case, the container app) has been deployed. This creates a catch-22, because the container app cannot be deployed without first retrieving an image.
-
-By using a user-assigned identity, this issue can be avoided. The deployment order within the module would be as follows:
-
-- deploy ACR
-- deploy user-assigned identity
-- assign the 'AcrPull' role
-- deploy the container app
-
-This way, the module ensures that all the necessary permissions are in place before the container app deployment. It is a smoother, first time right deployment and more reliable process that we strongly recommend for most use cases.
-See also [here](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity?tabs=portal%2Cdotnet#common-use-cases)
-
-**System-assigned identity support:**
-The module accepts `identity = { type = "SystemAssigned" }` for container apps and jobs without requiring `identity_ids`. For first-time deployments that depend on module-managed ACR or Key Vault role assignments, user-assigned identities remain the recommended approach.
-
 ## Contributors
 
 We welcome contributions from the community! Whether it's reporting a bug, suggesting a new feature, or submitting a pull request, your input is highly valued.
