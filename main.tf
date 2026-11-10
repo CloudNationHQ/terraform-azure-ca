@@ -320,6 +320,7 @@ resource "azurerm_container_app" "this" {
       exposed_port               = ingress.value.transport == "tcp" ? ingress.value.exposed_port : null
       transport                  = ingress.value.transport
       client_certificate_mode    = ingress.value.client_certificate_mode
+      session_affinity_enabled   = ingress.value.session_affinity_enabled
 
 
       dynamic "traffic_weight" {
