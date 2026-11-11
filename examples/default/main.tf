@@ -37,8 +37,9 @@ module "ca" {
         }
 
         ingress = {
-          external_enabled = true
-          target_port      = 80
+          external_enabled         = true
+          target_port              = 80
+          session_affinity_enabled = true
           traffic_weight = {
             default = {
               percentage = 100

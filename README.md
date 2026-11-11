@@ -29,13 +29,13 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 5.13)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 5.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 5.13)
 
 ## Resources
 
@@ -227,6 +227,7 @@ object({
         exposed_port               = optional(number)
         transport                  = optional(string)
         client_certificate_mode    = optional(string)
+        session_affinity_enabled   = optional(bool)
         traffic_weight = optional(map(object({
           label           = optional(string)
           latest_revision = optional(bool, true)
