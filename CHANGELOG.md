@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.1.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v5.0.0...v5.1.0) (2026-11-11)
+
+
+### Features
+
+* add session_affinity_enabled to container app ingress ([#120](https://github.com/CloudNationHQ/terraform-azure-ca/issues/120)) ([1f033fe](https://github.com/CloudNationHQ/terraform-azure-ca/commit/1f033feabd47955c4a2dc2f901dd5820351ccc63)), closes [#119](https://github.com/CloudNationHQ/terraform-azure-ca/issues/119)
+* **deps:** bump github.com/klauspost/compress in /tests ([#115](https://github.com/CloudNationHQ/terraform-azure-ca/issues/115)) ([06ccfc6](https://github.com/CloudNationHQ/terraform-azure-ca/commit/06ccfc6260cefe01ab06d391be913b1874526520))
+
 ## [5.0.0](https://github.com/CloudNationHQ/terraform-azure-ca/compare/v4.3.0...v5.0.0) (2026-09-04)
 
 
