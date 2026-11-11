@@ -227,6 +227,7 @@ object({
         exposed_port               = optional(number)
         transport                  = optional(string)
         client_certificate_mode    = optional(string)
+        session_affinity_enabled   = optional(bool)
         traffic_weight = optional(map(object({
           label           = optional(string)
           latest_revision = optional(bool, true)
